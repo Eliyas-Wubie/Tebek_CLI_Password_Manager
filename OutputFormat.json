@@ -1,14 +1,9 @@
-
 {
-    "Credentials":[
-        {
-            "id": "xxxx",
-            "createdAt": "",
-            "updatedAt":"",
-            "domain":"",
-            "email/Username":"",
-            "password":""
-        }
-    ]
+    "systemConstants":{
+        "ChrBlackList":[],
+        "OptionalChrBlackList":[],
+        "defaultPasswordLength":17
+    },
+    "credentials":[]
 }
- 
+    

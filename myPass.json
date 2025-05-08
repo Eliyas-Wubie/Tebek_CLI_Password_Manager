@@ -1,0 +1,46 @@
+{
+    "systemConstants": {
+        "ChrBlackList": [],
+        "OptionalChrBlackList": [],
+        "defaultPasswordLength": 17
+    },
+    "credentials": [
+        {
+            "id": "CR-0002",
+            "keywords": [
+                "git",
+                "github",
+                "github.com"
+            ],
+            "username": "eliyas.wubie1@gmail.com",
+            "createdAt": "2025-05-08T05:45:43.981377",
+            "updatedAt": "",
+            "passwords": [
+                {
+                    "password": "^G^7ZnFWt~!XpVfb*",
+                    "startDate": "2025-05-08T05:45:43.981377",
+                    "expireDate": "2025-06-07T05:45:43.978409",
+                    "current": true
+                }
+            ]
+        },
+        {
+            "id": "CR-0003",
+            "keywords": [
+                "git",
+                "github"
+            ],
+            "username": "another one",
+            "createdAt": "2025-05-08T05:46:18.173768",
+            "updatedAt": "",
+            "passwords": [
+                {
+                    "password": "$*<^j;iz/<0KFpl,u",
+                    "startDate": "2025-05-08T05:46:18.173768",
+                    "expireDate": "2025-06-07T05:46:18.171520",
+                    "current": true
+                }
+            ]
+        }
+    ]
+}
