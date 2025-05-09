@@ -61,25 +61,25 @@ def generate_new_password(length=17,mode="unrestricted"): #DONE
         console.print(f"[bold red]the length of password generated is not",length,"password: ", password)
     
 def display_intro(): # DONE
-    console.print(Panel("Hello and Welcome to Tebek Password Manager. This a local only, Key Based Password Managment tool with High level encryption", title="[bold green on red] Welcome ", style="white on blue"),justify="center")
+    console.print(Panel("Hello and Welcome to Tebek Password Manager. This a local only, Key Based Password Managment tool with High level encryption. you can \n Insert 'X' or 'exit' to leave a menu", title="[bold green on red] Welcome ", style="white on blue"),justify="center")
 
 def prompt_options(options,title="OPTIONS",mode="main"): # DONE
     if mode=="main":
         console.rule(f"[bold]{title.upper()}", style="bold green")
         optionsList=[]
-        console.print("\t<Options>---------<Descriptions>           Insert exit/Exit to leave the current prompt")
+        console.print("\t<Options>\t<Descriptions>           Insert exit/Exit to leave the current prompt")
         console.rule("", style="blue")
         for option in options:     # iterate and display them
-            console.print(f"[bold]\t  <{list(option.keys())[0].upper()}>------[bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True)
+            console.print(f"[bold]\t  <{list(option.keys())[0].upper()}>------------[bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True)
             optionsList.append(list(option.keys())[0].upper())
-        console.rule("END")
+        console.rule("'X' or 'exit' to leave")
         # provide an input
         choice=Prompt.ask("[bold yellow]\tInsert Option ")
         # return the selected item/dictionalry and validate
         if choice.upper() in optionsList: # valid choice selected
             return choice
-        elif choice.upper()=="EXIT":      # exit selected
-            return "EXIT"
+        elif choice.upper()=="EXIT" or choice.upper()=="X":      # exit selected
+            quit()
         else:                             # invalid input warning and RE-PROMPT
             console.print("[bold red]\t\t<< Alert >>[/bold red] [italic] Invalid input, Please select again")
             value=prompt_options(options)
@@ -93,17 +93,17 @@ def prompt_options(options,title="OPTIONS",mode="main"): # DONE
             console.print(f"[bold]\t<{list(option.keys())[0].upper()}> --- [bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True,end="")
             optionsList.append(list(option.keys())[0].upper())
         console.print("")
-        console.rule("END")
+        console.rule("'X' or 'exit' to leave")
         # provide an input
         choice=Prompt.ask("[bold yellow]\t\tInsert Option ")
         # return the selected item/dictionalry and validate
         if choice.upper() in optionsList: # valid choice selected
             return choice
-        elif choice.upper()=="EXIT":      # exit selected
+        elif choice.upper()=="EXIT" or choice.upper()=="X":      # exit selected
             return "EXIT"
         else:                             # invalid input warning and RE-PROMPT
             console.print("[bold red]\t\t<< Alert >>[/bold red] [italic] Invalid input, Please select again")
-            value=prompt_options(options)
+            value=prompt_options(options,title,mode)
             return value
 
 def display_collections(data,title="DATA",mode="search"):
@@ -119,8 +119,19 @@ def display_collections(data,title="DATA",mode="search"):
             keywords=keywords[:20-3]+"..."
             sn="<"+str(i)+">"
             console.print(f"{sn:<{4}} \t {keywords:<{20}} \t {data[i].get("username"):<{25}} \t {activePassword:<{10}}")
+        console.rule(f"'X' or 'exit' to leave")
         choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
-        display_collections(data[int(choise)],"SINGLE","search_single")
+        if choise.isdigit():
+            if -1<int(choise)<len(data):
+                display_collections(data[int(choise)],"SINGLE","search_single")
+            else:
+                console.print(f"[red] Invalid Input")
+                display_collections(data,title,mode)
+        elif choise.upper()=="EXIT"  or choise.upper()=="X":
+            return "done"
+        else:
+            console.print(f"[red] Invalid Input")
+            display_collections(data,title,mode)
     if mode=="search_single":
         console.rule(f"Keywords")
         for item in data.get("keywords"):
@@ -144,11 +155,61 @@ def display_collections(data,title="DATA",mode="search"):
             "2":view_password_history,
             "3":del_cred
         }
-    # console.rule(title)
-
+        executor=actionMap[choise]
+        resp=executor(data)
+        if resp=="done":
+            display_collections(data,title,mode)
+    if mode=="notif":
+        console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
+        for i in range(len(data)):
+            activePassword="No Active Password"
+            for pwd in data[i].get("cred").get("passwords"):
+                if pwd.get("current"):
+                    activePassword=pwd.get("password")
+            keywords="/".join(data[i].get("cred").get("keywords"))
+            keywords=keywords[:20-3]+"..."
+            sn="<"+str(i)+">"
+            console.print(f"{sn:<{4}} \t {keywords:<{20}} \t {data[i].get("cred").get("username"):<{25}} \t {data[i].get("expireDate"):<{10}}")
+        console.rule(f"'X' or 'exit' to leave")
+        choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
+        if choise.upper()=="EXIT" or choise.upper()=="X":
+            return "done"
+        else:
+            resp=display_collections(data[int(choise)],"SINGLE","search_notif")
+            while resp=="continue":
+                resp=display_collections(data[int(choise)],"SINGLE","search_notif")
+    if mode=="search_notif":
+        console.rule(f"Keywords")
+        for item in data.get("cred").get("keywords"):
+            console.print(f"\t{item}",end="")
+        console.print("")
+        console.rule(f"",style="blue")
+        console.print(f"\t[bold blue]Username ", data.get("cred").get("username"))
+        activePassword="No Active Password"
+        for pwd in data.get("cred").get("passwords"):
+            if pwd.get("current"):
+                activePassword=pwd.get("password")
+        console.print(f"\t[bold blue]Password ", activePassword)
+        options=[
+            {"U":"Update"},
+            {"V":"View Previous Passowrds"},
+            {"D":"Delete Credential"}
+        ]
+        choise=prompt_options(options,"OPTIONS","simple")
+        actionMap={
+            "U":update_cred,
+            "V":view_password_history,
+            "D":del_cred
+        }
+        if choise.upper()=="EXIT" or choise.upper()=="X":
+            print("exiting single view")
+            return "done"
+        else:
+            executor=actionMap[choise.upper()]
+            resp=executor(data.get("cred"))
+            return "continue"
+    
 def add_cred(): #DONE 
-    # console.print(f"====>  Adding cred ........")
-    # console.print(f"")
     userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
     keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
     keywords=keywords.replace(" ","")
@@ -167,18 +228,15 @@ def add_cred(): #DONE
     # show options 
     options=[
         {
-            "1":"Accept"
+            "A":"Accept"
         },
         {
-            "2":"change Domain and email"
-        },
-        {
-            "x":"discard and exit"
+            "R":"change Domain and email"
         }
     ]
     choise=prompt_options(options,"CONFIRMATION","simple")
     # wait for confirmation
-    if choise=="1": # save to database -> decide database structure
+    if choise.upper()=="A": # save to database -> decide database structure
         expire=datetime.now()+timedelta(30)# delta should be read from config
         template={
             "id":generate_credential_id(),
@@ -197,9 +255,9 @@ def add_cred(): #DONE
         }
         save_data_file(template,"add cred")
         console.print(f"[bold purple] New Credential Saved !", justify="center")
-    elif choise=="2": # recursive call
+    elif choise.upper()=="R": # recursive call
         add_cred()
-    elif choise=="x" or choise=="X": # exit
+    elif choise.upper()=="EXIT":
         return "done"
 
 def load_data_file(): # DONE
@@ -247,12 +305,19 @@ def save_data_file(input,mode="add cred"): # DONE
     if mode=="add cred":
         dataFile.get("credentials").append(input)
     elif mode=="update cred":
-        dataFile.get("credentials")[input.get("id")]=input.get("updatedData")
+        for i in range(len(dataFile.get("credentials"))):
+            print("matching ", dataFile.get("credentials")[i].get("id"), input.get("id"))
+            if dataFile.get("credentials")[i].get("id")==input.get("id"):
+                dataFile.get("credentials")[i]=input.get("updatedData")
     elif mode=="del cred":
-        pass
+        for i  in range(len(dataFile.get("credentials"))):
+            if dataFile.get("credentials")[i].get("id")==input:
+                print("deletteing....")
+                del dataFile.get("credentials")[i]
+                break
     with open(path, 'w') as f:
         json.dump(dataFile, f, indent=4)
-        return "done"
+    return "done"
     
 def load_config(): # DONE
     filepath="./config.json"
@@ -301,7 +366,7 @@ def search_cred(): # DONE
     
     display_collections(result)    
 
-def update_cred(data): 
+def update_cred(data): # DONE
     userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
     keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
     keywords=keywords.replace(" ","")
@@ -329,41 +394,101 @@ def update_cred(data):
             "x":"discard and exit"
         }
     ]
+    
     choise=prompt_options(options,"CONFIRMATION","simple")
     if choise=="1": # adjust this loigic to append
-        expire=datetime.now()+timedelta(30)# delta should be read from config 
-        template={
-            "id":generate_credential_id(),
-            "keywords":keywordsList,
-            "username":userName,
-            "createdAt":datetime.now().isoformat(), # change here to make it the original
-            "updatedAt":"", # change here to add the latest date
-            "passwords":[ # append here and turn the previous false to true
-                {
+        expire=datetime.now()+timedelta(30)# delta should be read from config
+        for pwd in data.get("passwords"):
+            pwd["current"]=False
+        data.get("passwords").append(
+            {
                     "password":password,
                     "startDate":datetime.now().isoformat(),
                     "expireDate":expire.isoformat(),
                     "current":True
-                }
-                ]
+            }
+        )
+        data={
+            "id":data.get("id"),
+            "keywords":keywordsList,
+            "username":userName,
+            "createdAt":data.get("createdAt"),
+            "updatedAt":datetime.now().isoformat(),
+            "passwords":data.get("passwords")
         }
-        save_data_file(template,"add cred")
-        console.print(f"[bold purple] New Credential Saved !", justify="center")
+        send={
+            "id":data.get("id"),
+            "updatedData":data
+        }
+        save_data_file(send,"update cred")
+        console.print(f"[bold purple] Credential Updated !", justify="center")
     elif choise=="2": # recursive call
         update_cred(data)
     elif choise=="x" or choise=="X": # exit
         return "done"
+    return "done"
 
-def del_cred():
-    # confirm,
-    # dlete,
-    # save
-    pass
+def del_cred(data): # DONE
+    option=[
+        {"Y": "Yes"},
+        {"N": "No"}
+    ]
+    confirmation=prompt_options(option,"CONFIRMATION","simple")
+    print("bla bla bla", confirmation)
+    if confirmation.upper()=="EXIT":
+        print("----- returining done")
+        return "done"
+    elif confirmation.lower()=="y":
+        id=data.get("id")
+        save_data_file(id,"del cred")
+    elif confirmation.lower()=="n":
+        return "done"
+    else:
+        console.print(f"[red] Invalid Input")
+        del_cred(data)
+    return "done"
 
-def view_password_history():
-    # acess, format, display all the password hostory, in time order, with active collored uniquely
-    pass
+def view_password_history(data): # DONE
+    console.rule("Password History")
+    console.print(f"{"<Password>":<{20}} \t {"< CreationTime >":<{25}} \t {"<ExpireDate>":<{25}}")
+    for item in data.get("passwords"):
+        console.print(f"{item.get("password"):<{20}} \t {item.get("startDate"):<{25}} \t {item.get("expireDate"):<{25}}")
+    console.rule("")
+    return "done"
 
-def show_notif():
-    pass
+def show_notif(): # DONE - count
+    # expired notification
+    dataFile=load_data_file()
+    config=load_config()
+    path=config.get("dataPath")
+    notif=[]
+    # iterate all credentials
+    for i in range(len(dataFile.get("credentials"))):
+        cred=dataFile.get("credentials")[i]
+        passwordIndex=None
+        for j in range(len(cred.get("passwords"))):
+            pwd=cred.get("passwords")[j]
+            if pwd.get("current"):
+                currentPwd=pwd
+                passwordIndex=j
+                break
+            else:
+                continue
+        now = datetime.now()
+        expireTime = datetime.fromisoformat(currentPwd.get("expireDate"))
+        if now>expireTime:
+            template={
+                "expireDate":currentPwd.get("expireDate"),
+                "passIndex":passwordIndex,
+                "cred":cred
+            }
+            notif.append(template)
+        else:
+            continue
+    display_collections(notif,"NOTIFICATION","notif")
 
+#REMAINING
+    # Testing
+    # logging
+    # encryption
+    # publishing

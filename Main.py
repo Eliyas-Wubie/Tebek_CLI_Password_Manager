@@ -7,27 +7,26 @@ if config=={}:
     set_data_file()
 myList=[
     {
-        "0":"Notifications"
+        "N":"Notifications"
     },
     {
-        "1":"Search A Credential"
+        "S":"Search Credential"
     }, 
     {
-        "2":"Add a New Credential"
+        "A":"Add Credential"
     },
     {
-        "3":"Update a Credential"
+        "U":"Update  Credential"
     }
     ]
 while True:
     choice=prompt_options(myList,"MAIN MENU")
+    
     MainMenuOptions={
-        "0":show_notif,
-        "1":search_cred,
-        "2":add_cred,
-        "3":update_cred
+        "N":show_notif,
+        "S":search_cred,
+        "A":add_cred,
+        "U":update_cred
     }
-    if choice.lower()=="exit":
-        break
-    executer=MainMenuOptions.get(choice)
+    executer=MainMenuOptions.get(choice.upper())
     executer()
