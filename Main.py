@@ -5,18 +5,16 @@ config=load_config()
 if config=={}:
     console.print("The Data File is not specified")
     set_data_file()
+count=show_notif("count")
 myList=[
     {
-        "N":"Notifications"
+        "N":f"Notifications (*{count})"
     },
     {
         "S":"Search Credential"
     }, 
     {
         "A":"Add Credential"
-    },
-    {
-        "U":"Update  Credential"
     }
     ]
 while True:

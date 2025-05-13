@@ -145,20 +145,24 @@ def display_collections(data,title="DATA",mode="search"):
                 activePassword=pwd.get("password")
         console.print(f"\t[bold blue]Password ", activePassword)
         options=[
-            {"1":"Update"},
-            {"2":"View Previous Passowrds"},
-            {"3":"Delete Credential"}
+            {"U":"Update"},
+            {"V":"View Previous Passowrds"},
+            {"D":"Delete Credential"}
         ]
         choise=prompt_options(options,"OPTIONS","simple")
         actionMap={
-            "1":update_cred,
-            "2":view_password_history,
-            "3":del_cred
+            "U":update_cred,
+            "V":view_password_history,
+            "D":del_cred
         }
-        executor=actionMap[choise]
-        resp=executor(data)
-        if resp=="done":
-            display_collections(data,title,mode)
+        if choise.upper()=="EXIT" or choise.upper()=="X":
+            # print("exiting single view")
+            return "done"
+        else:
+            executor=actionMap[choise]
+            resp=executor(data)
+            if resp=="done":
+                display_collections(data,title,mode)
     if mode=="notif":
         console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
         for i in range(len(data)):
@@ -202,7 +206,7 @@ def display_collections(data,title="DATA",mode="search"):
             "D":del_cred
         }
         if choise.upper()=="EXIT" or choise.upper()=="X":
-            print("exiting single view")
+            # print("exiting single view")
             return "done"
         else:
             executor=actionMap[choise.upper()]
@@ -456,12 +460,13 @@ def view_password_history(data): # DONE
     console.rule("")
     return "done"
 
-def show_notif(): # DONE - count
+def show_notif(mode="main"): # DONE - count
     # expired notification
     dataFile=load_data_file()
     config=load_config()
     path=config.get("dataPath")
     notif=[]
+    count=0
     # iterate all credentials
     for i in range(len(dataFile.get("credentials"))):
         cred=dataFile.get("credentials")[i]
@@ -482,10 +487,14 @@ def show_notif(): # DONE - count
                 "passIndex":passwordIndex,
                 "cred":cred
             }
+            count+=1
             notif.append(template)
         else:
             continue
-    display_collections(notif,"NOTIFICATION","notif")
+    if mode=="count":
+        return count
+    else:
+        display_collections(notif,"NOTIFICATION","notif")
 
 #REMAINING
     # Testing
