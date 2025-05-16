@@ -7,7 +7,55 @@ from datetime import datetime, timedelta
 import secrets
 import random
 import os, json, re
+from cryptography.fernet import Fernet
 console = Console()
+
+# add system password lock logic, encrypt and store password in config, use salt(system built in data).
+    # import socket
+    # hostname = socket.gethostname()
+    # print("Hostname:", hostname)
+
+    # import uuid
+    # mac_address = uuid.getnode()
+    # mac_address_str = ':'.join(['{:02x}'.format((mac_address >> ele) & 0xff) for ele in range(40, -1, -8)])
+    # print("MAC Address:", mac_address_str)
+
+    # import subprocess
+    # def get_linux_uuid():
+    #     try:
+    #         uuid = subprocess.check_output('cat /sys/class/dmi/id/product_uuid', shell=True).decode().strip()
+    #         return uuid
+    #     except Exception:
+    #         return None
+    # uuid_value = get_linux_uuid()
+    # print("System UUID:", uuid_value)
+# generate key from system specific info use the above info, salt and obfuscate
+    # from cryptography.fernet import Fernet
+    # import base64
+    # import json
+
+    # # Your key string (replace this with your actual key string)
+    # key_str = "your-key-string-here"  # e.g., "VGVzdEtleVRleHRXb3JrU3RyaW5n"
+
+    # # Convert the key string back to bytes
+    # key_bytes = base64.urlsafe_b64decode(key_str.encode('utf-8'))
+
+    # # Initialize Fernet with the key
+    # f = Fernet(key_bytes)
+    # json_data = json.dumps(data).encode('utf-8')
+    # encrypted = f.encrypt(json_data)
+# decrypt after reading
+    # with open('encrypted_data.bin', 'rb') as f_in:
+    #     encrypted_data = f_in.read()
+    # decrypted_bytes = f.decrypt(encrypted_data)
+    # decrypted_json = decrypted_bytes.decode('utf-8')
+    # decrypted_data = json.loads(decrypted_json)
+# encrypt before writing
+    # # Save encrypted data to a file
+    # with open('encrypted_data.bin', 'wb') as f_out:
+    #     f_out.write(encrypted)
+def Load_key():
+    pass
 
 def generate_credential_id(): #DONE
     last_ids = load_last_ids()
