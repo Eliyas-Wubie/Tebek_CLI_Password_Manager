@@ -7,6 +7,10 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from sib_api_v3_sdk.configuration import Configuration
 
+from cryptography.fernet import Fernet
+import base64
+import json
+
 from Util.IDgen import load_last_ids,save_last_ids,generate_id
 from datetime import datetime, timedelta
 import secrets
@@ -203,6 +207,7 @@ def display_collections(data,title="DATA",mode="search"):
             {"D":"Delete Credential"}
         ]
         choise=prompt_options(options,"OPTIONS","simple")
+        choise=choise.upper()
         actionMap={
             "U":update_cred,
             "V":view_password_history,
@@ -253,6 +258,7 @@ def display_collections(data,title="DATA",mode="search"):
             {"D":"Delete Credential"}
         ]
         choise=prompt_options(options,"OPTIONS","simple")
+        choise=choise.upper()
         actionMap={
             "U":update_cred,
             "V":view_password_history,
@@ -323,20 +329,20 @@ def load_data_file(): # DONE
         path=config.get("dataPath")
         if os.path.exists(path):
             try:
-                with open(path, 'r') as f:
-                    data = json.load(f)
+                encrypted=readFile(path,"bin")
+                dData=decrypt_data(encrypted)
                 # Decrypt data
-                return data
+                return dData
             except json.JSONDecodeError:
                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
         else:
             console.print(f"The File dose not Exist, Would you like to start from an empty file?")
             options=[
                 {
-                    "1": "yes",
+                    "Y": "yes",
                 },
                 {
-                    "2":"no"
+                    "N":"no"
                 }
             ]
             choise=prompt_options(options,"CREATE NEW FILE","simple")
@@ -349,10 +355,13 @@ def load_data_file(): # DONE
                 },
                 "credentials":[]
             }
-            if choise=="1":
-                with open(path, 'w') as f:
-                    json.dump(template, f, indent=4)
-                return template
+            if choise.lower()=="y":
+                # encrypt here
+                encryptedData=encrypt_data(template)
+                # write file
+                writeFile(encryptedData,path,"bin")
+                # json.dump(template, f, indent=4)
+                return "done"
             elif choise=="2":
                 pass
 
@@ -373,8 +382,8 @@ def save_data_file(input,mode="add cred"): # DONE
                 print("deletteing....")
                 del dataFile.get("credentials")[i]
                 break
-    with open(path, 'w') as f:
-        json.dump(dataFile, f, indent=4)
+    eData=encrypt_data(dataFile)
+    writeFile(eData,path,"bin")
     return "done"
     
 def load_config(): # DONE
@@ -397,7 +406,7 @@ def load_config(): # DONE
     
 def set_data_file(): # DONE
     filepath="./config.json"
-    path=Prompt.ask(f"Insert File Path : ")
+    path=Prompt.ask(f"Insert File Path ")
     # Copy to Known path for future use
     config=load_config()
     config["dataPath"]=path
@@ -606,7 +615,34 @@ def readFile(path, fileType="json"):
         except:
             print(f"Warning: File '{path}' is not valid TXT. Creating a new file with default data.")
     elif fileType=="bin":
-        pass
+        with open(path, 'rb') as f_in:
+            data = f_in.read()
+        return data
+    else:
+        print("file type unspecified")
+
+def writeFile(data,path, fileType="json"):
+    if fileType=="json":
+        try:
+            with open(path, 'w') as f:
+                json.dump(data,f,indent=4)
+            return "done"
+        except Exception as e:
+            print(f"Warning: error writing json. {e} ")
+    elif fileType=="txt":
+        try:
+            with open(path, 'w') as f:
+                f.write(data)
+            return "done"
+        except:
+            print(f"Warning: error writing txt.")
+    elif fileType=="bin":
+        try:
+            with open(path, 'wb') as f:
+                f.write(data)
+            return "done"
+        except Exception as e:
+            print(f"Warning: error writing bin.{e}")
     else:
         print("file type unspecified")
 
@@ -617,22 +653,37 @@ def checkFile(path):
         return False
 
 def decrypt_data(eData):
+    f = get_encryption_object()
     decrypted_bytes = f.decrypt(eData)
     decrypted_json = decrypted_bytes.decode('utf-8')
     decrypted_data = json.loads(decrypted_json)
-    return decrypted_bytes
+    return decrypted_data
+
 def encrypt_data(dData):
-    config=load_config()
+    print(dData)
     json_data = json.dumps(dData).encode('utf-8')
+    print(json_data)
+    f = get_encryption_object()
     encrypted = f.encrypt(json_data)
-    # Save encrypted data to a file
-    with open(f'{config.get("data_path")}', 'wb') as f_out:
-        f_out.write(encrypted)
-    pass
-def get_key():
-    pass
+    print(encrypted)
+    return encrypted
+
+def get_key(): 
+    config=load_config()
+    if config.get("key")!=None:
+        return config.get("key")
+    else:
+        key = Fernet.generate_key()
+        key_str=key.decode('utf-8')
+        config["key"]=key_str
+        writeFile(config,"./config.json","json")
+        print(key)
+        return key
+
 def get_encryption_object():
-    pass
+    key_str=get_key()
+    f = Fernet(key_str)
+    return f
 #REMAINING
     # Testing
     # logging

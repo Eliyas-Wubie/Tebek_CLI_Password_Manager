@@ -1,0 +1,4 @@
+1. When a cred is updated, immidiately refetch
+2. when a cred is deeted, go back to main menue or list menu with updated list
+3. when searching if there is no result dont ask for serial number
+4. where and how to store the key and make it percist
