@@ -2,6 +2,11 @@ from rich import print
 from rich.panel import Panel
 from rich.console import Console
 from rich.prompt import Prompt
+
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+from sib_api_v3_sdk.configuration import Configuration
+
 from Util.IDgen import load_last_ids,save_last_ids,generate_id
 from datetime import datetime, timedelta
 import secrets
@@ -320,6 +325,7 @@ def load_data_file(): # DONE
             try:
                 with open(path, 'r') as f:
                     data = json.load(f)
+                # Decrypt data
                 return data
             except json.JSONDecodeError:
                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
@@ -385,10 +391,6 @@ def load_config(): # DONE
             return {}
     else:
         print(f"File '{filepath}' not found. Creating it with default data.")
-        # Ensure the directory exists before creating the file
-        # directory = os.path.dirname(filepath)
-        # if directory and not os.path.exists(directory):
-        #     os.makedirs(directory)
         with open(filepath, 'w') as f:
             json.dump({}, f, indent=4)
         return {}
@@ -544,8 +546,96 @@ def show_notif(mode="main"): # DONE - count
     else:
         display_collections(notif,"NOTIFICATION","notif")
 
+def email_confirmation(confirmation_code):
+    configuration = Configuration()
+    configuration.api_key['api-key'] = 'your_brevo_api_key_here'
+
+    api_client = sib_api_v3_sdk.ApiClient(configuration)
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(api_client)
+
+    email_content = f"""
+    <html>
+      <body>
+        <p>Hello!</p>
+        <p>Your confirmation code is <strong>{confirmation_code}</strong>.</p>
+      </body>
+    </html>
+    """
+
+    email = sib_api_v3_sdk.SendSmtpEmail(
+        to=[{"email": "to_email"}],
+        subject="Confirm Your Email Address",
+        html_content=email_content,
+        sender={"name": "Your App", "email": "your@email.com"}
+    )
+
+    try:
+        response = api_instance.send_transac_email(email)
+        print("Email sent! Message ID:", response['messageId'])
+    except ApiException as e:
+        print("Error sending email:", e)
+
+
+    filepath="./config.json"
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+            return True
+        except json.JSONDecodeError:
+            print(f"Warning: File '{filepath}' is not valid JSON. Creating a new file with default data.")
+            return False
+    else:
+        print(f"File '{filepath}' not found. Creating config with default data.")
+        return False
+###################################### New Implementation
+
+def readFile(path, fileType="json"):
+    if fileType=="json":
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+            return data
+        except json.JSONDecodeError:
+            print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
+    elif fileType=="txt":
+        try:
+            with open(path, 'r') as f:
+                data = f.read()
+            return data
+        except:
+            print(f"Warning: File '{path}' is not valid TXT. Creating a new file with default data.")
+    elif fileType=="bin":
+        pass
+    else:
+        print("file type unspecified")
+
+def checkFile(path):
+    if os.path.exists(path):
+        return True
+    else:
+        return False
+
+def decrypt_data(eData):
+    decrypted_bytes = f.decrypt(eData)
+    decrypted_json = decrypted_bytes.decode('utf-8')
+    decrypted_data = json.loads(decrypted_json)
+    return decrypted_bytes
+def encrypt_data(dData):
+    config=load_config()
+    json_data = json.dumps(dData).encode('utf-8')
+    encrypted = f.encrypt(json_data)
+    # Save encrypted data to a file
+    with open(f'{config.get("data_path")}', 'wb') as f_out:
+        f_out.write(encrypted)
+    pass
+def get_key():
+    pass
+def get_encryption_object():
+    pass
 #REMAINING
     # Testing
     # logging
     # encryption
     # publishing
+

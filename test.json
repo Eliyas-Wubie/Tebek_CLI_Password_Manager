@@ -1,0 +1,8 @@
+{
+    "systemConstants": {
+        "ChrBlackList": [],
+        "OptionalChrBlackList": [],
+        "defaultPasswordLength": 17
+    },
+    "credentials": []
+}
