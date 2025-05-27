@@ -180,7 +180,10 @@ def display_collections(data,title="DATA",mode="search"):
         choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
         if choise.isdigit():
             if -1<int(choise)<len(data):
-                display_collections(data[int(choise)],"SINGLE","search_single")
+                resp=display_collections(data[int(choise)],"SINGLE","search_single")
+                if resp=="done":
+                    del data[int(choise)]
+                    display_collections(data,title,mode)
             else:
                 console.print(f"[red] Invalid Input")
                 display_collections(data,title,mode)
@@ -219,8 +222,12 @@ def display_collections(data,title="DATA",mode="search"):
         else:
             executor=actionMap[choise]
             resp=executor(data)
-            if resp=="done":
+            if resp=="deleted":
+                return "done"
+            elif resp=="history":
                 display_collections(data,title,mode)
+            elif isinstance(resp, dict):
+                display_collections(resp,title,mode)
     if mode=="notif":
         console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
         for i in range(len(data)):
@@ -417,6 +424,8 @@ def set_data_file(): # DONE
 def search_cred(): # DONE
     data=load_data_file()
     query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain ")
+    if query.lower()=="x" or query.lower()=="exit":
+        return "done"
     query=f".*{query}.*"
     creds=data.get("credentials")
     result=[]
@@ -426,8 +435,11 @@ def search_cred(): # DONE
             if check:
                 result.append(cred)
                 break
-    
-    display_collections(result)    
+    if result==[]:
+        console.print(f"[yellow] No data available")
+        search_cred()
+    else:
+        display_collections(result)    
 
 def update_cred(data): # DONE
     userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
@@ -485,6 +497,7 @@ def update_cred(data): # DONE
         }
         save_data_file(send,"update cred")
         console.print(f"[bold purple] Credential Updated !", justify="center")
+        return data
     elif choise=="2": # recursive call
         update_cred(data)
     elif choise=="x" or choise=="X": # exit
@@ -504,6 +517,7 @@ def del_cred(data): # DONE
     elif confirmation.lower()=="y":
         id=data.get("id")
         save_data_file(id,"del cred")
+        return "deleted"
     elif confirmation.lower()=="n":
         return "done"
     else:
@@ -517,7 +531,7 @@ def view_password_history(data): # DONE
     for item in data.get("passwords"):
         console.print(f"{item.get("password"):<{20}} \t {item.get("startDate"):<{25}} \t {item.get("expireDate"):<{25}}")
     console.rule("")
-    return "done"
+    return "history"
 
 def show_notif(mode="main"): # DONE - count
     # expired notification
