@@ -2,6 +2,7 @@ from rich import print
 from rich.panel import Panel
 from rich.console import Console
 from rich.prompt import Prompt
+from rich.align import Align
 
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
@@ -15,6 +16,9 @@ from Util.IDgen import load_last_ids,save_last_ids,generate_id
 from datetime import datetime, timedelta
 import secrets
 import random
+import platform
+import subprocess
+import uuid
 import os, json, re
 from cryptography.fernet import Fernet
 console = Console()
@@ -120,7 +124,7 @@ def generate_new_password(length=17,mode="unrestricted"): #DONE
 def display_intro(): # DONE
     console.print(Panel("Hello and Welcome to Tebek Password Manager. This a local only, Key Based Password Managment tool with High level encryption. you can \n Insert 'X' or 'exit' to leave a menu", title="[bold green on red] Welcome ", style="white on blue"),justify="center")
 
-def prompt_options(options,title="OPTIONS",mode="main"): # DONE
+def prompt_options(options,title="OPTIONS",mode="main",more=""): # DONE
     if mode=="main":
         console.rule(f"[bold]{title.upper()}", style="bold green")
         optionsList=[]
@@ -129,6 +133,8 @@ def prompt_options(options,title="OPTIONS",mode="main"): # DONE
         for option in options:     # iterate and display them
             console.print(f"[bold]\t  <{list(option.keys())[0].upper()}>------------[bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True)
             optionsList.append(list(option.keys())[0].upper())
+        allignedMore=Align.center(more)
+        console.print(allignedMore)
         console.rule("'X' or 'exit' to leave")
         # provide an input
         choice=Prompt.ask("[bold yellow]\tInsert Option ")
@@ -176,6 +182,10 @@ def display_collections(data,title="DATA",mode="search"):
             keywords=keywords[:20-3]+"..."
             sn="<"+str(i)+">"
             console.print(f"{sn:<{4}} \t {keywords:<{20}} \t {data[i].get("username"):<{25}} \t {activePassword:<{10}}")
+        resultCount=len(data)
+        info=f"[green on blue] Found CREDENTIALS [bold #ff00ff on #000000] > {resultCount} < "
+        allignedInfo=Align.center(info)
+        console.print(allignedInfo)
         console.rule(f"'X' or 'exit' to leave")
         choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
         if choise.isdigit():
@@ -337,8 +347,12 @@ def load_data_file(): # DONE
         if os.path.exists(path):
             try:
                 encrypted=readFile(path,"bin")
+                # confirmation logic, we should get recpt email from the data, check device id similarity
+                    # decrypt the datafile with the static key
+                    # get device id
+                    # compare device ids
+                    # if identical continue else confirm and update the device id on the data file
                 dData=decrypt_data(encrypted)
-                # Decrypt data
                 return dData
             except json.JSONDecodeError:
                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
@@ -569,9 +583,11 @@ def show_notif(mode="main"): # DONE - count
     else:
         display_collections(notif,"NOTIFICATION","notif")
 
-def email_confirmation(confirmation_code):
+def email_confirmation(confirmation_code,Remail):
     configuration = Configuration()
-    configuration.api_key['api-key'] = 'your_brevo_api_key_here'
+    bravoEmail=Prompt.ask(f"Please insert Bravo email")
+    bravoKey=Prompt.ask(f"Please insert Bravo api key to use confirmation")
+    configuration.api_key['api-key'] = bravoKey
 
     api_client = sib_api_v3_sdk.ApiClient(configuration)
     api_instance = sib_api_v3_sdk.TransactionalEmailsApi(api_client)
@@ -584,12 +600,11 @@ def email_confirmation(confirmation_code):
       </body>
     </html>
     """
-
     email = sib_api_v3_sdk.SendSmtpEmail(
-        to=[{"email": "to_email"}],
-        subject="Confirm Your Email Address",
+        to=[{"email": Remail}],
+        subject="Tebek Password Manager data file loading confirmation",
         html_content=email_content,
-        sender={"name": "Your App", "email": "your@email.com"}
+        sender={"name": "TEBEK pwd mgr", "email": bravoEmail}
     )
 
     try:
@@ -698,6 +713,58 @@ def get_encryption_object():
     key_str=get_key()
     f = Fernet(key_str)
     return f
+
+def get_dev_id(os,mode="sn"):
+    if os=="Linux":
+        if mode=="sn":
+            try:
+                result = subprocess.run(
+                    ["sudo", "dmidecode", "-s", "system-serial-number"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                return result.stdout.strip()
+            except subprocess.CalledProcessError:
+                data=get_dev_id(os,"mac")
+                return data
+                # return "Permission denied or dmidecode not available"
+        elif mode=="mac":
+            return hex(uuid.getnode())
+    elif os=="Windows":
+        if mode=="sn":
+            result = subprocess.run(
+                ["system_profiler", "SPHardwareDataType"],
+                capture_output=True,
+                text=True
+            )
+            for line in result.stdout.splitlines():
+                if "Serial Number" in line:
+                    return line.split(":")[1].strip()
+                else:
+                    data=get_dev_id(os,"mac")
+                    return data
+        elif mode=="mac":
+            return hex(uuid.getnode())
+    else:
+        if mode=="sn":
+            result = subprocess.run(
+                ["system_profiler", "SPHardwareDataType"],
+                capture_output=True,
+                text=True
+            )
+            for line in result.stdout.splitlines():
+                if "Serial Number" in line:
+                    return line.split(":")[1].strip()
+                else:
+                    data=get_dev_id(os,"mac")
+                    return data
+        elif mode=="mac":
+            return hex(uuid.getnode())
+
+def get_os_type():
+    os_name = platform.system()
+    return os_name
 #REMAINING
     # Testing
     # logging

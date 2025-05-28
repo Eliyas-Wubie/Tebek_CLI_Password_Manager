@@ -9,6 +9,8 @@ while True:
         if dataPath!=None:
             isDataFileAvailable=checkFile(dataPath)
             if isDataFileAvailable:
+                data=load_data_file()
+                credentialCount=len(data.get("credentials"))
                 count=show_notif("count")
                 myList=[
                     {
@@ -22,7 +24,7 @@ while True:
                     }
                     ]
                 while True:
-                    choice=prompt_options(myList,"MAIN MENU")
+                    choice=prompt_options(myList,f"MAIN MENU","main",f"[blue on green] TOTAL CREDENTIALS STORED [bold #ff00ff on #000000] > {credentialCount} < ")
                     
                     MainMenuOptions={
                         "N":show_notif,
