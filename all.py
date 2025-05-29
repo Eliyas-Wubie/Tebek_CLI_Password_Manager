@@ -71,8 +71,6 @@ TemporaryKeyHolder=""
     # # Save encrypted data to a file
     # with open('encrypted_data.bin', 'wb') as f_out:
     #     f_out.write(encrypted)
-def Load_key():
-    pass
 
 def generate_credential_id(): #DONE
     last_ids = load_last_ids()
@@ -130,12 +128,12 @@ def display_intro(): # DONE
 
 def prompt_options(options,title="OPTIONS",mode="main",more=""): # DONE
     if mode=="main":
-        console.rule(f"[bold]{title.upper()}", style="bold green")
+        console.rule(f"[bold green on black] {title.upper()} ", style="bold green")
         optionsList=[]
-        console.print("\t<Options>\t<Descriptions>           Insert exit/Exit to leave the current prompt")
+        console.print("\t<Options>\t<Descriptions>")
         console.rule("", style="blue")
         for option in options:     # iterate and display them
-            console.print(f"[bold]\t  <{list(option.keys())[0].upper()}>------------[bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True)
+            console.print(f"[bold]\t  <{list(option.keys())[0].upper()}>............[bold green]{list(option.values())[0].capitalize()} ", style="blue",no_wrap=True)
             optionsList.append(list(option.keys())[0].upper())
         allignedMore=Align.center(more)
         console.print(allignedMore)
@@ -345,6 +343,7 @@ def add_cred(): #DONE
         return "done"
 
 def load_data_file(): # DONE
+    global TemporaryKeyHolder
     config=load_config()
     if config.get("dataPath")!=None:
         path=config.get("dataPath")
@@ -355,12 +354,12 @@ def load_data_file(): # DONE
                 dData=decrypt_data(encrypted)
                 pltform=get_os_type()
                 devID=get_dev_id(pltform)
-                print (devID,dData.get("deviceID"))
+                
                 if devID!=dData.get("deviceID"):
                     # confirmation
                     pass
                 if TemporaryKeyHolder=="":
-                    masterPWD2=Prompt.ask(f"Master Password")
+                    masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
                     masterKey=generate_fernet_key_from_password(masterPWD2)
                     TemporaryKeyHolder=masterKey
                 original_bytes = base64.b64decode(dData.get("credentials"))
@@ -421,21 +420,26 @@ def load_data_file(): # DONE
 
 def save_data_file(input,mode="add cred"): # DONE
     dataFile=load_data_file()
+
     config=load_config()
     path=config.get("dataPath")
     if mode=="add cred":
         dataFile.get("credentials").append(input)
     elif mode=="update cred":
         for i in range(len(dataFile.get("credentials"))):
-            print("matching ", dataFile.get("credentials")[i].get("id"), input.get("id"))
+            # print("matching ", dataFile.get("credentials")[i].get("id"), input.get("id"))
             if dataFile.get("credentials")[i].get("id")==input.get("id"):
                 dataFile.get("credentials")[i]=input.get("updatedData")
     elif mode=="del cred":
         for i  in range(len(dataFile.get("credentials"))):
             if dataFile.get("credentials")[i].get("id")==input:
-                print("deletteing....")
+                # print("deletteing....")
                 del dataFile.get("credentials")[i]
                 break
+    # encrypt the cred of the data file
+    encryptedCred=encrypt_data(dataFile.get("credentials"),TemporaryKeyHolder)
+    encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
+    dataFile["credentials"]=encryptedCredStr
     eData=encrypt_data(dataFile)
     writeFile(eData,path,"bin")
     return "done"
@@ -484,7 +488,7 @@ def search_cred(): # DONE
                 break
     if result==[]:
         console.print(f"[yellow] No data available")
-        search_cred()
+        return "done"
     else:
         display_collections(result)    
 
@@ -557,9 +561,7 @@ def del_cred(data): # DONE
         {"N": "No"}
     ]
     confirmation=prompt_options(option,"CONFIRMATION","simple")
-    print("bla bla bla", confirmation)
     if confirmation.upper()=="EXIT":
-        print("----- returining done")
         return "done"
     elif confirmation.lower()=="y":
         id=data.get("id")
@@ -733,13 +735,11 @@ def encrypt_data(dData,key=""):
         json_data = json.dumps(dData).encode('utf-8')
         f = get_encryption_object()
         encrypted = f.encrypt(json_data)
-        print(encrypted)
         return encrypted
     else:
         json_data = json.dumps(dData).encode('utf-8')
         f = get_encryption_object(key)
         encrypted = f.encrypt(json_data)
-        print(encrypted)
         return encrypted
 
 def get_key(): 
@@ -767,7 +767,6 @@ def get_encryption_object(key=""):
         return f
 
 def get_dev_id(pltform,mode="sn"):
-    print(pltform)
     if pltform=="Linux":
         if mode=="sn":
             try:

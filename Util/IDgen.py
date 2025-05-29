@@ -39,7 +39,7 @@ def main():
     # Save back to JSON
     save_last_ids(last_ids)
 
-    print(f"Generated ID: {new_id}")
+    # print(f"Generated ID: {new_id}")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file, view_data
-
+TemporaryKeyHolder=""
 display_intro()
 while True:
     isConfigAvailable=checkFile("./config.json")
