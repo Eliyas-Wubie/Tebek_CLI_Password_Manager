@@ -8,6 +8,10 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from sib_api_v3_sdk.configuration import Configuration
 
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+
 from cryptography.fernet import Fernet
 import base64
 import json
@@ -22,7 +26,7 @@ import uuid
 import os, json, re
 from cryptography.fernet import Fernet
 console = Console()
-
+TemporaryKeyHolder=""
 # add system password lock logic, encrypt and store password in config, use salt(system built in data).
     # import socket
     # hostname = socket.gethostname()
@@ -347,12 +351,27 @@ def load_data_file(): # DONE
         if os.path.exists(path):
             try:
                 encrypted=readFile(path,"bin")
+                # decrypt the datafile with the static key
+                dData=decrypt_data(encrypted)
+                pltform=get_os_type()
+                devID=get_dev_id(pltform)
+                print (devID,dData.get("deviceID"))
+                if devID!=dData.get("deviceID"):
+                    # confirmation
+                    pass
+                if TemporaryKeyHolder=="":
+                    masterPWD2=Prompt.ask(f"Master Password")
+                    masterKey=generate_fernet_key_from_password(masterPWD2)
+                    TemporaryKeyHolder=masterKey
+                original_bytes = base64.b64decode(dData.get("credentials"))
+                decryptedCred=decrypt_data(original_bytes,TemporaryKeyHolder)
+                dData["credentials"]=decryptedCred
                 # confirmation logic, we should get recpt email from the data, check device id similarity
-                    # decrypt the datafile with the static key
+                    
                     # get device id
                     # compare device ids
                     # if identical continue else confirm and update the device id on the data file
-                dData=decrypt_data(encrypted)
+                
                 return dData
             except json.JSONDecodeError:
                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
@@ -368,15 +387,29 @@ def load_data_file(): # DONE
             ]
             choise=prompt_options(options,"CREATE NEW FILE","simple")
             
-            template={
+            if choise.lower()=="y":
+                confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
+                masterPWD=Prompt.ask(f"Insert Master Password")
+                masterPWD2=Prompt.ask(f"confirm Master Password")
+                if masterPWD!=masterPWD2:
+                    return "done"
+                masterKey=generate_fernet_key_from_password(masterPWD2)
+                pltform=get_os_type()
+                deviceID=get_dev_id(pltform)
+                template={
                 "systemConstants":{
                 "ChrBlackList":[],
                 "OptionalChrBlackList":[],
                 "defaultPasswordLength":17,
                 },
+                "email":confirmationEmail,
+                "deviceID":deviceID,
                 "credentials":[]
             }
-            if choise.lower()=="y":
+                credentials=[]
+                encryptedCred=encrypt_data(credentials,masterKey)
+                encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
+                template["credentials"]=encryptedCredStr
                 # encrypt here
                 encryptedData=encrypt_data(template)
                 # write file
@@ -681,41 +714,61 @@ def checkFile(path):
     else:
         return False
 
-def decrypt_data(eData):
-    f = get_encryption_object()
-    decrypted_bytes = f.decrypt(eData)
-    decrypted_json = decrypted_bytes.decode('utf-8')
-    decrypted_data = json.loads(decrypted_json)
-    return decrypted_data
+def decrypt_data(eData,key=""):
+    if key=="":
+        f = get_encryption_object()
+        decrypted_bytes = f.decrypt(eData)
+        decrypted_json = decrypted_bytes.decode('utf-8')
+        decrypted_data = json.loads(decrypted_json)
+        return decrypted_data
+    else:
+        f = get_encryption_object(key)
+        decrypted_bytes = f.decrypt(eData)
+        decrypted_json = decrypted_bytes.decode('utf-8')
+        decrypted_data = json.loads(decrypted_json)
+        return decrypted_data
 
-def encrypt_data(dData):
-    print(dData)
-    json_data = json.dumps(dData).encode('utf-8')
-    print(json_data)
-    f = get_encryption_object()
-    encrypted = f.encrypt(json_data)
-    print(encrypted)
-    return encrypted
+def encrypt_data(dData,key=""):
+    if key=="":
+        json_data = json.dumps(dData).encode('utf-8')
+        f = get_encryption_object()
+        encrypted = f.encrypt(json_data)
+        print(encrypted)
+        return encrypted
+    else:
+        json_data = json.dumps(dData).encode('utf-8')
+        f = get_encryption_object(key)
+        encrypted = f.encrypt(json_data)
+        print(encrypted)
+        return encrypted
 
 def get_key(): 
-    config=load_config()
-    if config.get("key")!=None:
-        return config.get("key")
+    # config=load_config()
+    # if config.get("key")!=None:
+    #     return config.get("key")
+    # else:
+    #     key = Fernet.generate_key()
+    #     key_str=key.decode('utf-8')
+    #     config["key"]=key_str
+    #     writeFile(config,"./config.json","json")
+    #     print(key)
+    #     return key
+    key = "I3SJTsjh3tzanQR67JBRhcHNmW55LbtZlR87-3CEVs8=" # static key
+    return key
+
+def get_encryption_object(key=""):
+    if key=="":
+        key_str=get_key()
+        f = Fernet(key_str)
+        return f
     else:
-        key = Fernet.generate_key()
-        key_str=key.decode('utf-8')
-        config["key"]=key_str
-        writeFile(config,"./config.json","json")
-        print(key)
-        return key
+        key_str=key
+        f = Fernet(key_str)
+        return f
 
-def get_encryption_object():
-    key_str=get_key()
-    f = Fernet(key_str)
-    return f
-
-def get_dev_id(os,mode="sn"):
-    if os=="Linux":
+def get_dev_id(pltform,mode="sn"):
+    print(pltform)
+    if pltform=="Linux":
         if mode=="sn":
             try:
                 result = subprocess.run(
@@ -731,12 +784,13 @@ def get_dev_id(os,mode="sn"):
                 # return "Permission denied or dmidecode not available"
         elif mode=="mac":
             return hex(uuid.getnode())
-    elif os=="Windows":
+    elif pltform=="Windows":
         if mode=="sn":
             result = subprocess.run(
-                ["system_profiler", "SPHardwareDataType"],
+                ["wmic", "bios", "get", "serialnumber"],
                 capture_output=True,
-                text=True
+                text=True,
+                check=True
             )
             for line in result.stdout.splitlines():
                 if "Serial Number" in line:
@@ -765,6 +819,26 @@ def get_dev_id(os,mode="sn"):
 def get_os_type():
     os_name = platform.system()
     return os_name
+
+def generate_fernet_key_from_password(password):
+    STATIC_SALT = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
+
+    # Derive key using PBKDF2HMAC
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=STATIC_SALT,
+        iterations=100_000,
+        backend=default_backend()
+    )
+
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key
+
+def view_data():
+    data=load_data_file()
+    print(data)
+
 #REMAINING
     # Testing
     # logging

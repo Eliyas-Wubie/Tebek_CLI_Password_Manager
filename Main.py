@@ -1,4 +1,4 @@
-from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file
+from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file, view_data
 
 display_intro()
 while True:
@@ -21,6 +21,9 @@ while True:
                     }, 
                     {
                         "A":"Add Credential"
+                    },
+                    {
+                        "V":"View Data"
                     }
                     ]
                 while True:
@@ -30,7 +33,7 @@ while True:
                         "N":show_notif,
                         "S":search_cred,
                         "A":add_cred,
-                        "U":update_cred
+                        "V":view_data
                     }
                     executer=MainMenuOptions.get(choice.upper())
                     executer()
