@@ -1,2 +1,4 @@
-2. where and how to store the key and make it percist - double encryption --- done
-    a. handle global personal key ram storage ---- done
+1. allow viewing and adjusting setting
+2. add more settings, device lock, email confirmation, changing optional char blacklist + more think and add
+3. add the restricted charachters in the source code
+4. when user goes to single cred view immidiately copy password to clipboard

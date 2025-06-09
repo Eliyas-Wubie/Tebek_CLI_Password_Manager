@@ -4,10 +4,8 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.align import Align
 
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
-from sib_api_v3_sdk.configuration import Configuration
-
+import resend
+import string
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
@@ -122,7 +120,12 @@ def generate_new_password(length=17,mode="unrestricted"): #DONE
         return password
     else:
         console.print(f"[bold red]the length of password generated is not",length,"password: ", password)
-    
+
+def generate_code(length=8):
+    print("generating code")
+    characters = string.ascii_letters + string.digits  # a-zA-Z0-9
+    return ''.join(random.choices(characters, k=length))
+
 def display_intro(): # DONE
     console.print(Panel("Hello and Welcome to Tebek Password Manager. This a local only, Key Based Password Managment tool with High level encryption. you can \n Insert 'X' or 'exit' to leave a menu", title="[bold green on red] Welcome ", style="white on blue"),justify="center")
 
@@ -354,10 +357,25 @@ def load_data_file(): # DONE
                 dData=decrypt_data(encrypted)
                 pltform=get_os_type()
                 devID=get_dev_id(pltform)
-                
-                if devID!=dData.get("deviceID"):
+                dataEmail=dData.get('email')
+                # print(devID,dData.get('deviceID') )
+                if devID!=dData.get('deviceID'):
                     # confirmation
-                    pass
+                    code=generate_code()
+                    email_confirmation(code, dataEmail)
+                    Confirm=Prompt.ask(f"Insert Confirmatuion code")
+                    if code!=Confirm:
+                        console.print(f"[bold red] confirmation mismatch, Exiting program!!")
+                        quit()
+                    else:
+                        dData['deviceID']=devID
+                        eData=encrypt_data(dData)
+                        writeFile(eData,path,"bin")
+                        print("data owner changed")
+                        pass
+                    # compare code
+                    
+
                 if TemporaryKeyHolder=="":
                     masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
                     masterKey=generate_fernet_key_from_password(masterPWD2)
@@ -618,49 +636,21 @@ def show_notif(mode="main"): # DONE - count
     else:
         display_collections(notif,"NOTIFICATION","notif")
 
-def email_confirmation(confirmation_code,Remail):
-    configuration = Configuration()
-    bravoEmail=Prompt.ask(f"Please insert Bravo email")
-    bravoKey=Prompt.ask(f"Please insert Bravo api key to use confirmation")
-    configuration.api_key['api-key'] = bravoKey
+def email_confirmation(confirmation_code, dataEmail):
+    print("sending confirmation email")
+    resendKey=Prompt.ask(f"Please insert Resend api key to use confirmation")
+    resend.api_key = resendKey
 
-    api_client = sib_api_v3_sdk.ApiClient(configuration)
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(api_client)
+    # Send email
+    res = resend.Emails.send({
+        "from": "onboarding@resend.dev",
+        "to": dataEmail,
+        "subject": "file ownership confirmation",
+        "html": f"<strong>This is your code {confirmation_code}</strong>"
+    })
+    print(res)
+    return "done"
 
-    email_content = f"""
-    <html>
-      <body>
-        <p>Hello!</p>
-        <p>Your confirmation code is <strong>{confirmation_code}</strong>.</p>
-      </body>
-    </html>
-    """
-    email = sib_api_v3_sdk.SendSmtpEmail(
-        to=[{"email": Remail}],
-        subject="Tebek Password Manager data file loading confirmation",
-        html_content=email_content,
-        sender={"name": "TEBEK pwd mgr", "email": bravoEmail}
-    )
-
-    try:
-        response = api_instance.send_transac_email(email)
-        print("Email sent! Message ID:", response['messageId'])
-    except ApiException as e:
-        print("Error sending email:", e)
-
-
-    filepath="./config.json"
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, 'r') as f:
-                data = json.load(f)
-            return True
-        except json.JSONDecodeError:
-            print(f"Warning: File '{filepath}' is not valid JSON. Creating a new file with default data.")
-            return False
-    else:
-        print(f"File '{filepath}' not found. Creating config with default data.")
-        return False
 ###################################### New Implementation
 
 def readFile(path, fileType="json"):
@@ -786,17 +776,15 @@ def get_dev_id(pltform,mode="sn"):
     elif pltform=="Windows":
         if mode=="sn":
             result = subprocess.run(
-                ["wmic", "bios", "get", "serialnumber"],
-                capture_output=True,
-                text=True,
-                check=True
+            ["wmic", "bios", "get", "serialnumber"],
+            capture_output=True,
+            text=True,
+            check=True
             )
-            for line in result.stdout.splitlines():
-                if "Serial Number" in line:
-                    return line.split(":")[1].strip()
-                else:
-                    data=get_dev_id(os,"mac")
-                    return data
+            lines = result.stdout.strip().splitlines()
+            for item in lines:
+                if item!=None and item!='' and not 'Seri' in item:                    
+                    return item
         elif mode=="mac":
             return hex(uuid.getnode())
     else:
