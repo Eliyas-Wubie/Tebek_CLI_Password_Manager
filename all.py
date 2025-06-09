@@ -25,50 +25,6 @@ import os, json, re
 from cryptography.fernet import Fernet
 console = Console()
 TemporaryKeyHolder=""
-# add system password lock logic, encrypt and store password in config, use salt(system built in data).
-    # import socket
-    # hostname = socket.gethostname()
-    # print("Hostname:", hostname)
-
-    # import uuid
-    # mac_address = uuid.getnode()
-    # mac_address_str = ':'.join(['{:02x}'.format((mac_address >> ele) & 0xff) for ele in range(40, -1, -8)])
-    # print("MAC Address:", mac_address_str)
-
-    # import subprocess
-    # def get_linux_uuid():
-    #     try:
-    #         uuid = subprocess.check_output('cat /sys/class/dmi/id/product_uuid', shell=True).decode().strip()
-    #         return uuid
-    #     except Exception:
-    #         return None
-    # uuid_value = get_linux_uuid()
-    # print("System UUID:", uuid_value)
-# generate key from system specific info use the above info, salt and obfuscate
-    # from cryptography.fernet import Fernet
-    # import base64
-    # import json
-
-    # # Your key string (replace this with your actual key string)
-    # key_str = "your-key-string-here"  # e.g., "VGVzdEtleVRleHRXb3JrU3RyaW5n"
-
-    # # Convert the key string back to bytes
-    # key_bytes = base64.urlsafe_b64decode(key_str.encode('utf-8'))
-
-    # # Initialize Fernet with the key
-    # f = Fernet(key_bytes)
-    # json_data = json.dumps(data).encode('utf-8')
-    # encrypted = f.encrypt(json_data)
-# decrypt after reading
-    # with open('encrypted_data.bin', 'rb') as f_in:
-    #     encrypted_data = f_in.read()
-    # decrypted_bytes = f.decrypt(encrypted_data)
-    # decrypted_json = decrypted_bytes.decode('utf-8')
-    # decrypted_data = json.loads(decrypted_json)
-# encrypt before writing
-    # # Save encrypted data to a file
-    # with open('encrypted_data.bin', 'wb') as f_out:
-    #     f_out.write(encrypted)
 
 def generate_credential_id(): #DONE
     last_ids = load_last_ids()
@@ -87,7 +43,7 @@ def generate_credential_id(): #DONE
     save_last_ids(last_ids)
     return new_id
 
-def generate_new_password(length=17,mode="unrestricted"): #DONE
+def generate_new_password(length=17,mode="restricted"): #DONE
     # get random number
     # ASCII Table 32–126 
     # 48–57	0–9	Digits
@@ -95,7 +51,7 @@ def generate_new_password(length=17,mode="unrestricted"): #DONE
     # 97–122	a–z	Lowercase letters
     password=""
     invalidCharList=["\\","\"","'","`"," "]
-    invalidIntList=[92,32,39,124],32
+    invalidIntList=[92,32,39,124,32]
     optionalInvalidCharList=["$","#","&",":",";","=",")","(","]","[","}","{",">","<",".",",","?","!","~"]
     i=0
     while i<length:
@@ -110,8 +66,8 @@ def generate_new_password(length=17,mode="unrestricted"): #DONE
             else:
                 password+=char
         else:
-            invalidList=invalidCharList.extend(optionalInvalidCharList)
-            if char in invalidList or salted_random_number in invalidIntList:
+            invalidCharList.extend(optionalInvalidCharList)
+            if char in invalidCharList or salted_random_number in invalidIntList:
                 i=i-1
             else:
                 password+=char
@@ -381,7 +337,11 @@ def load_data_file(): # DONE
                     masterKey=generate_fernet_key_from_password(masterPWD2)
                     TemporaryKeyHolder=masterKey
                 original_bytes = base64.b64decode(dData.get("credentials"))
-                decryptedCred=decrypt_data(original_bytes,TemporaryKeyHolder)
+                try:
+                    decryptedCred=decrypt_data(original_bytes,TemporaryKeyHolder)
+                except Exception as e:
+                    console.print(f"invalid Master Password : Exiting Program")
+                    quit()
                 dData["credentials"]=decryptedCred
                 # confirmation logic, we should get recpt email from the data, check device id similarity
                     
@@ -411,6 +371,7 @@ def load_data_file(): # DONE
                 if masterPWD!=masterPWD2:
                     return "done"
                 masterKey=generate_fernet_key_from_password(masterPWD2)
+                TemporaryKeyHolder=masterKey
                 pltform=get_os_type()
                 deviceID=get_dev_id(pltform)
                 template={
@@ -454,7 +415,8 @@ def save_data_file(input,mode="add cred"): # DONE
                 # print("deletteing....")
                 del dataFile.get("credentials")[i]
                 break
-    # encrypt the cred of the data file
+    elif mode=="change email":
+        dataFile["email"]=input
     encryptedCred=encrypt_data(dataFile.get("credentials"),TemporaryKeyHolder)
     encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
     dataFile["credentials"]=encryptedCredStr
@@ -492,11 +454,14 @@ def set_data_file(): # DONE
 
 def search_cred(): # DONE
     data=load_data_file()
-    query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain ")
+    creds=data.get("credentials")
+    query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain (* for all) ")
     if query.lower()=="x" or query.lower()=="exit":
         return "done"
+    elif query.lower()=="*":
+        display_collections(creds)
     query=f".*{query}.*"
-    creds=data.get("credentials")
+
     result=[]
     for cred in creds:    
         for keyword in cred.get("keywords"):
@@ -648,7 +613,7 @@ def email_confirmation(confirmation_code, dataEmail):
         "subject": "file ownership confirmation",
         "html": f"<strong>This is your code {confirmation_code}</strong>"
     })
-    print(res)
+    console.print(f"[blue bold] Email sent to {dataEmail}")
     return "done"
 
 ###################################### New Implementation
@@ -826,6 +791,23 @@ def view_data():
     data=load_data_file()
     print(data)
 
+def change_email():
+    newEmail=Prompt.ask(f"\t\t[yellow bold]Insert New Email")
+    console.print(f"\t\t [blue on green] NEW EMAIL [bold #ff00ff on #000000]>{newEmail}<", justify="center")
+    options=[
+                {
+                    "Y": "yes",
+                },
+                {
+                    "N":"no"
+                }
+            ]
+    choise=prompt_options(options,"Confirm New Email","simple")
+    if choise.lower()=="y":
+        save_data_file(newEmail,"change email")
+        console.print(f"[bold purple] Email Updated !", justify="center")
+    else:
+        return "done"
 #REMAINING
     # Testing
     # logging
