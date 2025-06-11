@@ -1,0 +1,11 @@
+Main.spec
+/build
+/dist
+/__pycache__
+1
+test
+config.json
+last_ids.json
+main.spec
+
+/__pycache__

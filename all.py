@@ -152,17 +152,21 @@ def display_collections(data,title="DATA",mode="search"):
         if choise.isdigit():
             if -1<int(choise)<len(data):
                 resp=display_collections(data[int(choise)],"SINGLE","search_single")
-                if resp=="done":
+                if resp=="deleted":
+                    print("showing after deleting")
                     del data[int(choise)]
+                    display_collections(data,title,mode)
+                else:
                     display_collections(data,title,mode)
             else:
                 console.print(f"[red] Invalid Input")
                 display_collections(data,title,mode)
         elif choise.upper()=="EXIT"  or choise.upper()=="X":
-            return "done"
+            return "exit"
         else:
             console.print(f"[red] Invalid Input")
             display_collections(data,title,mode)
+        return "exit"
     if mode=="search_single":
         console.rule(f"Keywords")
         for item in data.get("keywords"):
@@ -194,11 +198,15 @@ def display_collections(data,title="DATA",mode="search"):
             executor=actionMap[choise]
             resp=executor(data)
             if resp=="deleted":
-                return "done"
+                return "deleted"
             elif resp=="history":
                 display_collections(data,title,mode)
             elif isinstance(resp, dict):
                 display_collections(resp,title,mode)
+            elif resp=="done":
+                display_collections(data,title,mode)
+            return "done"
+        return "done"
     if mode=="notif":
         console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
         for i in range(len(data)):
@@ -445,11 +453,14 @@ def load_config(): # DONE
 def set_data_file(): # DONE
     filepath="./config.json"
     path=Prompt.ask(f"Insert File Path ")
+    if path.lower()=="x" or path.lower()=="exit":
+        return "done"
     # Copy to Known path for future use
     config=load_config()
     config["dataPath"]=path
     with open(filepath, 'w') as f:
         json.dump(config, f, indent=4)
+    load_data_file()
     # Create config file that specifies the path - this may be the better way
 
 def search_cred(): # DONE
@@ -459,7 +470,9 @@ def search_cred(): # DONE
     if query.lower()=="x" or query.lower()=="exit":
         return "done"
     elif query.lower()=="*":
-        display_collections(creds)
+        resp=display_collections(creds)
+        if resp=="exit":
+            return "done"
     query=f".*{query}.*"
 
     result=[]
@@ -494,10 +507,10 @@ def update_cred(data): # DONE
     # show options 
     options=[
         {
-            "1":"Accept"
+            "A":"Accept"
         },
         {
-            "2":"change Domain and email"
+            "C":"change Domain and email"
         },
         {
             "x":"discard and exit"
@@ -505,7 +518,7 @@ def update_cred(data): # DONE
     ]
     
     choise=prompt_options(options,"CONFIRMATION","simple")
-    if choise=="1": # adjust this loigic to append
+    if choise.lower()=="a": # adjust this loigic to append
         expire=datetime.now()+timedelta(30)# delta should be read from config
         for pwd in data.get("passwords"):
             pwd["current"]=False
@@ -532,7 +545,7 @@ def update_cred(data): # DONE
         save_data_file(send,"update cred")
         console.print(f"[bold purple] Credential Updated !", justify="center")
         return data
-    elif choise=="2": # recursive call
+    elif choise.lower()=="c": # recursive call
         update_cred(data)
     elif choise=="x" or choise=="X": # exit
         return "done"
@@ -808,9 +821,10 @@ def change_email():
         console.print(f"[bold purple] Email Updated !", justify="center")
     else:
         return "done"
-#REMAINING
-    # Testing
-    # logging
-    # encryption
-    # publishing
+
+def change_path():
+    config=load_config()
+    current_path = os.getcwd()
+    console.print(f"[yellow on blue] Data Path : [yellow on black]{current_path}\{config.get("dataPath")}")
+    set_data_file()
 
