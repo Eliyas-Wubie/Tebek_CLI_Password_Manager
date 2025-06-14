@@ -1,15 +1,16 @@
-from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file, view_data, change_email, change_path
-TemporaryKeyHolder=""
+from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file, view_data, change_email, change_path, load_data_fileV2
+# TemporaryKeyHolder=""
 display_intro()
 while True:
     isConfigAvailable=checkFile("./config.json")
     if isConfigAvailable:
-        config=readFile("./config.json","json")
+        config=load_config()
         dataPath=config.get("dataPath")
         if dataPath!=None:
             isDataFileAvailable=checkFile(dataPath)
             if isDataFileAvailable:
-                data=load_data_file()
+                # data=load_data_file()
+                data=load_data_fileV2()
                 credentialCount=len(data.get("credentials"))
                 count=show_notif("count")
                 myList=[
@@ -18,17 +19,17 @@ while True:
                     },
                     {
                         "S":"Search Credential"
-                    }, 
+                    },
                     {
                         "A":"Add Credential"
                     },
-                    # {
-                    #     "V":"View Data"
-                    # },
+                    {
+                        "V":"View Data"
+                    },
                     {
                         "E": "Change Email"
                     },
-                                        {
+                    {
                         "P": "Change Data File Path"
                     }
                     ]
@@ -39,7 +40,7 @@ while True:
                         "N":show_notif,
                         "S":search_cred,
                         "A":add_cred,
-                        # "V":view_data,
+                        "V":view_data,
                         "E":change_email,
                         "P":change_path
                     }

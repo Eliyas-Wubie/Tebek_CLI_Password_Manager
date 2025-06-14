@@ -25,6 +25,8 @@ import os, json, re
 from cryptography.fernet import Fernet
 console = Console()
 TemporaryKeyHolder=""
+tempData=""
+tmpConfig=""
 
 def generate_credential_id(): #DONE
     last_ids = load_last_ids()
@@ -309,22 +311,215 @@ def add_cred(): #DONE
     elif choise.upper()=="EXIT":
         return "done"
 
-def load_data_file(): # DONE
+# def load_data_file(): # DONE
+#     print("using depreciated function",__file__, __name__,__spec__)
+#     global TemporaryKeyHolder
+#     global tmpConfig
+#     config=tmpConfig
+#     if config.get("dataPath")!=None:
+#         path=config.get("dataPath")
+#         if os.path.exists(path):
+#             try:
+#                 encrypted=readFile(path,"bin")
+#                 # decrypt the datafile with the static key
+#                 dData=decrypt_data(encrypted)
+#                 pltform=get_os_type()
+#                 devID=get_dev_id(pltform)
+#                 dataEmail=dData.get('email')
+#                 # print(devID,dData.get('deviceID') )
+#                 if devID!=dData.get('deviceID'):
+#                     # confirmation
+#                     code=generate_code()
+#                     email_confirmation(code, dataEmail)
+#                     Confirm=Prompt.ask(f"Insert Confirmatuion code")
+#                     if code!=Confirm:
+#                         console.print(f"[bold red] confirmation mismatch, Exiting program!!")
+#                         quit()
+#                     else:
+#                         dData['deviceID']=devID
+#                         eData=encrypt_data(dData)
+#                         writeFile(eData,path,"bin")
+#                         print("data owner changed")
+#                         pass
+#                     # compare code
+                    
+
+#                 if TemporaryKeyHolder=="":
+#                     masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
+#                     masterKey=generate_fernet_key_from_password(masterPWD2)
+#                     TemporaryKeyHolder=masterKey
+#                 original_bytes = base64.b64decode(dData.get("credentials"))
+#                 try:
+#                     decryptedCred=decrypt_data(original_bytes,TemporaryKeyHolder)
+#                 except Exception as e:
+#                     console.print(f"invalid Master Password : Exiting Program")
+#                     quit()
+#                 dData["credentials"]=decryptedCred
+#                 # confirmation logic, we should get recpt email from the data, check device id similarity
+                    
+#                     # get device id
+#                     # compare device ids
+#                     # if identical continue else confirm and update the device id on the data file
+                
+#                 return dData
+#             except json.JSONDecodeError:
+#                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
+#         else:
+#             console.print(f"The File dose not Exist, Would you like to start from an empty file?")
+#             options=[
+#                 {
+#                     "Y": "yes",
+#                 },
+#                 {
+#                     "N":"no"
+#                 }
+#             ]
+#             choise=prompt_options(options,"CREATE NEW FILE","simple")
+            
+#             if choise.lower()=="y":
+#                 confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
+#                 masterPWD=Prompt.ask(f"Insert Master Password")
+#                 masterPWD2=Prompt.ask(f"confirm Master Password")
+#                 if masterPWD!=masterPWD2:
+#                     return "done"
+#                 masterKey=generate_fernet_key_from_password(masterPWD2)
+#                 TemporaryKeyHolder=masterKey
+#                 pltform=get_os_type()
+#                 deviceID=get_dev_id(pltform)
+#                 template={
+#                 "systemConstants":{
+#                 "ChrBlackList":[],
+#                 "OptionalChrBlackList":[],
+#                 "defaultPasswordLength":17,
+#                 },
+#                 "email":confirmationEmail,
+#                 "deviceID":deviceID,
+#                 "credentials":[]
+#             }
+#                 credentials=[]
+#                 encryptedCred=encrypt_data(credentials,masterKey)
+#                 encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
+#                 template["credentials"]=encryptedCredStr
+#                 # encrypt here
+#                 encryptedData=encrypt_data(template)
+#                 # write file
+#                 writeFile(encryptedData,path,"bin")
+#                 # json.dump(template, f, indent=4)
+#                 return "done"
+#             elif choise=="2":
+#                 pass
+
+def load_data_fileV2():
+    global tempData
     global TemporaryKeyHolder
-    config=load_config()
+    global tmpConfig
+    if tempData=="": # if empty actually decrypt and load
+        config=tmpConfig
+        if config.get("dataPath")!=None:
+            path=config.get("dataPath")
+            if os.path.exists(path):
+                try:
+                    #-----Getting encrypted data and doing decryption lv1-----------------------------------
+                    encrypted=readFile(path,"bin") 
+                    dData=decrypt_data(encrypted)
+                    #-----Device Check and email confirmation ----------------------------------------------
+                    pltform=get_os_type()
+                    devID=get_dev_id(pltform)
+                    dataEmail=dData.get('email')
+                    if devID!=dData.get('deviceID'): #EMAIL CONFIRMATION
+                        code=generate_code()
+                        email_confirmation(code, dataEmail)
+                        Confirm=Prompt.ask(f"Insert Confirmatuion code")
+                        if code!=Confirm:
+                            console.print(f"[bold red] confirmation mismatch, Exiting program!!")
+                            quit()
+                        else:
+                            dData['deviceID']=devID
+                            eData=encrypt_data(dData)
+                            writeFile(eData,path,"bin")
+                            print("data owner changed")
+                            pass
+                    #-----Get Master Password and decryption lv2 -------------------------------------------    
+                    if TemporaryKeyHolder=="":
+                        masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
+                        masterKey=generate_fernet_key_from_password(masterPWD2)
+                        TemporaryKeyHolder=masterKey
+                    original_bytes = base64.b64decode(dData.get("credentials"))
+                    try:
+                        decryptedCred=decrypt_data(original_bytes,masterKey)
+                    except Exception as e:
+                        console.print(f"invalid Master Password : Exiting Program {e}")
+                        quit()
+                    dData["credentials"]=decryptedCred
+                    #----Seting Data to memory-------------------------------------------------------------
+                    tempData=dData.copy()
+                    return dData
+                except json.JSONDecodeError:
+                    print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
+            else:
+                console.print(f"The File dose not Exist, Would you like to start from an empty file?")
+                options=[
+                    {
+                        "Y": "yes",
+                    },
+                    {
+                        "N":"no"
+                    }
+                ]
+                choise=prompt_options(options,"CREATE NEW FILE","simple")
+                
+                if choise.lower()=="y":
+                    #-----Initial Data file setup--------------------------------------------------------
+                    confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
+                    masterPWD=Prompt.ask(f"Insert Master Password")
+                    masterPWD2=Prompt.ask(f"confirm Master Password")
+                    if masterPWD!=masterPWD2:
+                        return "done"
+                    masterKey=generate_fernet_key_from_password(masterPWD2)
+                    TemporaryKeyHolder=masterKey
+                    pltform=get_os_type()
+                    deviceID=get_dev_id(pltform)
+                    template={
+                        "systemConstants":{
+                        "ChrBlackList":[],
+                        "OptionalChrBlackList":[],
+                        "defaultPasswordLength":17,
+                        },
+                        "email":confirmationEmail,
+                        "deviceID":deviceID,
+                        "credentials":[]
+                        }
+                    tempData=template.copy()
+                    credentials=[]
+                    encryptedCred=encrypt_data(credentials,masterKey)
+                    encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
+                    template["credentials"]=encryptedCredStr
+                    encryptedData=encrypt_data(template)
+                    writeFile(encryptedData,path,"bin")
+                    return "done"
+                elif choise=="2":
+                    pass
+
+    else:   # returns temp data id it is already loaded, but this should not be needed
+        return tempData
+        # other code should just use global data to minimize repetetive decryption and loading
+
+def reload_data_file():
+    global tempData
+    global tmpConfig
+    config=tmpConfig
     if config.get("dataPath")!=None:
         path=config.get("dataPath")
         if os.path.exists(path):
             try:
-                encrypted=readFile(path,"bin")
-                # decrypt the datafile with the static key
+                #-----Getting encrypted data and doing decryption lv1-----------------------------------
+                encrypted=readFile(path,"bin") 
                 dData=decrypt_data(encrypted)
+                #-----Device Check and email confirmation ----------------------------------------------
                 pltform=get_os_type()
                 devID=get_dev_id(pltform)
                 dataEmail=dData.get('email')
-                # print(devID,dData.get('deviceID') )
-                if devID!=dData.get('deviceID'):
-                    # confirmation
+                if devID!=dData.get('deviceID'): #EMAIL CONFIRMATION
                     code=generate_code()
                     email_confirmation(code, dataEmail)
                     Confirm=Prompt.ask(f"Insert Confirmatuion code")
@@ -337,27 +532,18 @@ def load_data_file(): # DONE
                         writeFile(eData,path,"bin")
                         print("data owner changed")
                         pass
-                    # compare code
-                    
-
-                if TemporaryKeyHolder=="":
-                    masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
-                    masterKey=generate_fernet_key_from_password(masterPWD2)
-                    TemporaryKeyHolder=masterKey
+                #-----Get Master Password and decryption lv2 -------------------------------------------    
+                masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
+                masterKey=generate_fernet_key_from_password(masterPWD2)
                 original_bytes = base64.b64decode(dData.get("credentials"))
                 try:
-                    decryptedCred=decrypt_data(original_bytes,TemporaryKeyHolder)
+                    decryptedCred=decrypt_data(original_bytes,masterKey)
                 except Exception as e:
-                    console.print(f"invalid Master Password : Exiting Program")
+                    console.print(f"invalid Master Password : Exiting Program {e}")
                     quit()
                 dData["credentials"]=decryptedCred
-                # confirmation logic, we should get recpt email from the data, check device id similarity
-                    
-                    # get device id
-                    # compare device ids
-                    # if identical continue else confirm and update the device id on the data file
-                
-                return dData
+                #----Seting Data to memory-------------------------------------------------------------
+                tempData=dData.copy()
             except json.JSONDecodeError:
                 print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
         else:
@@ -373,42 +559,45 @@ def load_data_file(): # DONE
             choise=prompt_options(options,"CREATE NEW FILE","simple")
             
             if choise.lower()=="y":
+                #-----Initial Data file setup--------------------------------------------------------
                 confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
                 masterPWD=Prompt.ask(f"Insert Master Password")
                 masterPWD2=Prompt.ask(f"confirm Master Password")
                 if masterPWD!=masterPWD2:
                     return "done"
                 masterKey=generate_fernet_key_from_password(masterPWD2)
-                TemporaryKeyHolder=masterKey
                 pltform=get_os_type()
                 deviceID=get_dev_id(pltform)
                 template={
-                "systemConstants":{
-                "ChrBlackList":[],
-                "OptionalChrBlackList":[],
-                "defaultPasswordLength":17,
-                },
-                "email":confirmationEmail,
-                "deviceID":deviceID,
-                "credentials":[]
-            }
+                    "systemConstants":{
+                    "ChrBlackList":[],
+                    "OptionalChrBlackList":[],
+                    "defaultPasswordLength":17,
+                    },
+                    "email":confirmationEmail,
+                    "deviceID":deviceID,
+                    "credentials":[]
+                    }
+                tempData=template.copy()
                 credentials=[]
                 encryptedCred=encrypt_data(credentials,masterKey)
                 encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
                 template["credentials"]=encryptedCredStr
-                # encrypt here
                 encryptedData=encrypt_data(template)
-                # write file
                 writeFile(encryptedData,path,"bin")
-                # json.dump(template, f, indent=4)
                 return "done"
             elif choise=="2":
                 pass
 
-def save_data_file(input,mode="add cred"): # DONE
-    dataFile=load_data_file()
+        # other code should just use global data to minimize repetetive decryption and loading
 
-    config=load_config()
+def save_data_file(input,mode="add cred"): # DONE
+    print("accessing temporary key holder from", __file__)
+    global tempData
+    global tmpConfig
+    dataFile=tempData
+
+    config=tmpConfig
     path=config.get("dataPath")
     if mode=="add cred":
         dataFile.get("credentials").append(input)
@@ -425,6 +614,7 @@ def save_data_file(input,mode="add cred"): # DONE
                 break
     elif mode=="change email":
         dataFile["email"]=input
+    tempData=dataFile.copy()
     encryptedCred=encrypt_data(dataFile.get("credentials"),TemporaryKeyHolder)
     encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
     dataFile["credentials"]=encryptedCredStr
@@ -433,38 +623,46 @@ def save_data_file(input,mode="add cred"): # DONE
     return "done"
     
 def load_config(): # DONE
+    global tmpConfig
+    global tmpConfig
     filepath="./config.json"
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r') as f:
                 data = json.load(f)
+            tmpConfig=data
             return data
         except json.JSONDecodeError:
             print(f"Warning: File '{filepath}' is not valid JSON. Creating a new file with default data.")
             with open(filepath, 'w') as f:
                 json.dump({}, f, indent=4)
+            tmpConfig={}
             return {}
     else:
         print(f"File '{filepath}' not found. Creating it with default data.")
         with open(filepath, 'w') as f:
             json.dump({}, f, indent=4)
+        tmpConfig={}
         return {}
     
 def set_data_file(): # DONE
+    global tmpConfig
     filepath="./config.json"
     path=Prompt.ask(f"Insert File Path ")
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
     # Copy to Known path for future use
-    config=load_config()
+    config=tmpConfig
     config["dataPath"]=path
     with open(filepath, 'w') as f:
         json.dump(config, f, indent=4)
-    load_data_file()
+    # load_data_fileV2()
+    reload_data_file()
     # Create config file that specifies the path - this may be the better way
 
 def search_cred(): # DONE
-    data=load_data_file()
+    global tempData
+    data=tempData
     creds=data.get("credentials")
     query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain (* for all) ")
     if query.lower()=="x" or query.lower()=="exit":
@@ -491,11 +689,30 @@ def search_cred(): # DONE
 def update_cred(data): # DONE
     userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
     keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
+    createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N) ") # insert domains/keyword
+    while createNewPassword.lower()!="y" and createNewPassword.lower()!="n" and createNewPassword.lower()!="x" and createNewPassword.lower()!="exit" and createNewPassword!="":
+        print(createNewPassword)
+        createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N)") # insert domains/keyword
+    if createNewPassword.lower()=="x" or createNewPassword.lower()=="exit":
+        return "done"
+    if createNewPassword=="":
+        createNewPassword="n"
     keywords=keywords.replace(" ","")
     keywordsList=keywords.split(",")
     
     # generate and display password
-    password=generate_new_password()
+    if createNewPassword=="y":
+        password=generate_new_password()
+    elif createNewPassword=="n":
+        for pwd in data.get("passwords"):
+            if pwd.get("current")==True:
+                password=pwd.get("password")
+            else:
+                password=data.get("passwords")[-1]
+    if userName=="":
+        userName=data.get("username")
+    if keywords=="":
+        keywordsList=data.get("keywords")
     # display domain, username, password
     console.rule(f"Keywords")
     for item in keywordsList:
@@ -580,8 +797,10 @@ def view_password_history(data): # DONE
 
 def show_notif(mode="main"): # DONE - count
     # expired notification
-    dataFile=load_data_file()
-    config=load_config()
+    global tempData
+    global tmpConfig
+    dataFile=tempData
+    config=tmpConfig
     path=config.get("dataPath")
     notif=[]
     count=0
@@ -711,16 +930,6 @@ def encrypt_data(dData,key=""):
         return encrypted
 
 def get_key(): 
-    # config=load_config()
-    # if config.get("key")!=None:
-    #     return config.get("key")
-    # else:
-    #     key = Fernet.generate_key()
-    #     key_str=key.decode('utf-8')
-    #     config["key"]=key_str
-    #     writeFile(config,"./config.json","json")
-    #     print(key)
-    #     return key
     key = "I3SJTsjh3tzanQR67JBRhcHNmW55LbtZlR87-3CEVs8=" # static key
     return key
 
@@ -801,7 +1010,8 @@ def generate_fernet_key_from_password(password):
     return key
 
 def view_data():
-    data=load_data_file()
+    global tempData
+    data=tempData
     print(data)
 
 def change_email():
@@ -823,8 +1033,9 @@ def change_email():
         return "done"
 
 def change_path():
-    config=load_config()
+    global tmpConfig
+    config=tmpConfig
     current_path = os.getcwd()
-    console.print(f"[yellow on blue] Data Path : [yellow on black]{current_path}\{config.get("dataPath")}")
+    console.print(f"[yellow on blue] Data Path : [yellow on black]{current_path}\\{config.get("dataPath")}")
     set_data_file()
 
