@@ -1,2 +1,5 @@
 1. update Master password feature
 2. place last id data on the data file
+3. re-origanize files
+4. would you like to create the file prompt asks again when "n" is entered
+5. config file should holding failed data file creation attempts

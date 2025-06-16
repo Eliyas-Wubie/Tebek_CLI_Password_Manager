@@ -1,8 +1,8 @@
-from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, load_data_file, view_data, change_email, change_path, load_data_fileV2
+from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2
 # TemporaryKeyHolder=""
 display_intro()
 while True:
-    isConfigAvailable=checkFile("./config.json")
+    isConfigAvailable=checkFile("./TBKfiles/config.json")
     if isConfigAvailable:
         config=load_config()
         dataPath=config.get("dataPath")
@@ -48,10 +48,18 @@ while True:
                     executer()
             else:
                 set_data_file()
-                load_data_file()
+                load_data_fileV2()
+                dataPath=config.get("dataPath")
+                isDataFileAvailable=checkFile(dataPath)
+                if not isDataFileAvailable:
+                    quit()
         else:
             set_data_file()
-            load_data_file()
+            load_data_fileV2()
+            dataPath=config.get("dataPath")
+            isDataFileAvailable=checkFile(dataPath)
+            if not isDataFileAvailable:
+                quit()
     else:
         print("there is no config file")
         load_config()

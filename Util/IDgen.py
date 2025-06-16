@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 # Define the filename for storing the IDs
-filename = './last_ids.json'
+filename = './TBKfiles/last_ids.json'
 
 def load_last_ids():
     """Load the last IDs from the JSON file."""

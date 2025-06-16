@@ -495,10 +495,11 @@ def load_data_fileV2():
                     encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
                     template["credentials"]=encryptedCredStr
                     encryptedData=encrypt_data(template)
-                    writeFile(encryptedData,path,"bin")
+                    TBKPath=f"./TBKfiles/{path}"
+                    writeFile(encryptedData,TBKPath,"bin")
                     return "done"
-                elif choise=="2":
-                    pass
+                elif choise.lower()=="n":
+                    return "done"
 
     else:   # returns temp data id it is already loaded, but this should not be needed
         return tempData
@@ -625,7 +626,11 @@ def save_data_file(input,mode="add cred"): # DONE
 def load_config(): # DONE
     global tmpConfig
     global tmpConfig
-    filepath="./config.json"
+    filepath="./TBKfiles/config.json"
+    TBKfilesPath="./TBKfiles/"
+    if not os.path.exists(TBKfilesPath):
+    # Create the directory if it doesn't exist
+        os.makedirs(os.path.dirname(TBKfilesPath), exist_ok=True)
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r') as f:
@@ -647,19 +652,19 @@ def load_config(): # DONE
     
 def set_data_file(): # DONE
     global tmpConfig
-    filepath="./config.json"
+    filepath="./TBKfiles/config.json"
     path=Prompt.ask(f"Insert File Path ")
+    pathType=path_type_identifier(path)
+    TBKPath=evaluate_path(path,pathType)
+    
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
-    # Copy to Known path for future use
-    config=tmpConfig
-    config["dataPath"]=path
-    with open(filepath, 'w') as f:
-        json.dump(config, f, indent=4)
-    # load_data_fileV2()
-    reload_data_file()
-    # Create config file that specifies the path - this may be the better way
 
+    config=tmpConfig
+    config["dataPath"]=TBKPath
+    with open(filepath, 'w') as f: # use write file fn
+        json.dump(config, f, indent=4)
+    reload_data_file()
 def search_cred(): # DONE
     global tempData
     data=tempData
@@ -1035,7 +1040,35 @@ def change_email():
 def change_path():
     global tmpConfig
     config=tmpConfig
-    current_path = os.getcwd()
-    console.print(f"[yellow on blue] Data Path : [yellow on black]{current_path}\\{config.get("dataPath")}")
+    console.print(f"[yellow on blue] Data Path : [yellow on black]={config.get("dataPath")}")
     set_data_file()
 
+def path_type_identifier(path):
+    osType=get_os_type()
+    if osType=="Windows":
+        pass
+    if osType=="Linux":
+        pass
+    print(path)
+    path=path.replace("/","\\")
+    print(path)
+    if not "\\" in path:
+        pathType="unspecified"
+    elif path[0].lower()=="c":
+        pathType="absolut"
+    elif path[0].lower()=="/":
+        pathType="absolut" 
+    elif path[0].lower()==".":
+        pathType="relative"
+    return pathType
+
+def evaluate_path(path,pathType):
+    if pathType=="unspecified":
+        TBKPath=f"./TBKfiles/{path}"
+        TBKPath=os.path.abspath(os.path.join(os.getcwd(),TBKPath))
+    if pathType=="relative":
+        TBKPath=os.path.abspath(os.path.join(os.getcwd(),path))
+    if pathType=="absolut":
+        TBKPath=path
+    
+    return TBKPath
