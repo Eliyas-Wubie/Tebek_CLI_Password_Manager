@@ -1,5 +1,5 @@
-1. update Master password feature
-2. place last id data on the data file
-3. re-origanize files
-4. would you like to create the file prompt asks again when "n" is entered
-5. config file should holding failed data file creation attempts
+1. update Master password feature # re encrypt datw with new key and overwrite file
+2. re-origanize files
+3. config file should not bef holding failed data file creation attempts123
+4. during initial startup when not knowing masterpassword they should be able to insert new data path
+5. state issue, caused by gloaly manageing TBKpath and load/reload needing to check path existance

@@ -27,14 +27,16 @@ console = Console()
 TemporaryKeyHolder=""
 tempData=""
 tmpConfig=""
+tmpTBKpath=""
 
 def generate_credential_id(): #DONE
-    last_ids = load_last_ids()
     today = datetime.now().date().isoformat()
+    last_ids = tempData.get("lastId")        
+    # today = datetime.now().date().isoformat()
 
     # Get the last number for today; if not found, start from 0
     last_number = last_ids.get(today, -1)
-
+    print("last number is", last_number)
     # Generate a new ID
     new_id, new_last_number = generate_id(last_number)
 
@@ -42,7 +44,7 @@ def generate_credential_id(): #DONE
     last_ids[today] = new_last_number
 
     # Save back to JSON
-    save_last_ids(last_ids)
+    tempData["lastId"]=last_ids
     return new_id
 
 def generate_new_password(length=17,mode="restricted"): #DONE
@@ -413,6 +415,7 @@ def load_data_fileV2():
     global tempData
     global TemporaryKeyHolder
     global tmpConfig
+    global tmpTBKpath
     if tempData=="": # if empty actually decrypt and load
         config=tmpConfig
         if config.get("dataPath")!=None:
@@ -470,6 +473,14 @@ def load_data_fileV2():
                 
                 if choise.lower()=="y":
                     #-----Initial Data file setup--------------------------------------------------------
+                    filepath="./TBKfiles/config.json"
+                    config["dataPath"]=tmpTBKpath
+                    try:
+                        with open(filepath, 'w') as f: # use write file fn
+                            json.dump(config, f, indent=4)
+                    except Exception as e:
+                        print(e)
+                    
                     confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
                     masterPWD=Prompt.ask(f"Insert Master Password")
                     masterPWD2=Prompt.ask(f"confirm Master Password")
@@ -485,17 +496,21 @@ def load_data_fileV2():
                         "OptionalChrBlackList":[],
                         "defaultPasswordLength":17,
                         },
+                        
+                        "lastId":{},
                         "email":confirmationEmail,
                         "deviceID":deviceID,
                         "credentials":[]
                         }
+                    # print("my template ", template)
                     tempData=template.copy()
+                    # print("my tempData ", tempData)
                     credentials=[]
                     encryptedCred=encrypt_data(credentials,masterKey)
                     encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
                     template["credentials"]=encryptedCredStr
                     encryptedData=encrypt_data(template)
-                    TBKPath=f"./TBKfiles/{path}"
+                    TBKPath=tmpTBKpath
                     writeFile(encryptedData,TBKPath,"bin")
                     return "done"
                 elif choise.lower()=="n":
@@ -508,6 +523,7 @@ def load_data_fileV2():
 def reload_data_file():
     global tempData
     global tmpConfig
+    global tmpTBKpath
     config=tmpConfig
     if config.get("dataPath")!=None:
         path=config.get("dataPath")
@@ -561,6 +577,14 @@ def reload_data_file():
             
             if choise.lower()=="y":
                 #-----Initial Data file setup--------------------------------------------------------
+                
+                filepath="./TBKfiles/config.json"
+                config["dataPath"]=tmpTBKpath
+                try:
+                    with open(filepath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                except Exception as e:
+                    print(e)
                 confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
                 masterPWD=Prompt.ask(f"Insert Master Password")
                 masterPWD2=Prompt.ask(f"confirm Master Password")
@@ -575,11 +599,14 @@ def reload_data_file():
                     "OptionalChrBlackList":[],
                     "defaultPasswordLength":17,
                     },
+                    "lastId":{},
                     "email":confirmationEmail,
                     "deviceID":deviceID,
                     "credentials":[]
                     }
+                # print("my template ", template)
                 tempData=template.copy()
+                # print("my tempData ", tempData)
                 credentials=[]
                 encryptedCred=encrypt_data(credentials,masterKey)
                 encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
@@ -587,8 +614,8 @@ def reload_data_file():
                 encryptedData=encrypt_data(template)
                 writeFile(encryptedData,path,"bin")
                 return "done"
-            elif choise=="2":
-                pass
+            elif choise.lower()=="n":
+                return "done"
 
         # other code should just use global data to minimize repetetive decryption and loading
 
@@ -652,19 +679,18 @@ def load_config(): # DONE
     
 def set_data_file(): # DONE
     global tmpConfig
-    filepath="./TBKfiles/config.json"
+    global tmpTBKpath
     path=Prompt.ask(f"Insert File Path ")
     pathType=path_type_identifier(path)
     TBKPath=evaluate_path(path,pathType)
-    
+    tmpTBKpath=TBKPath
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
 
-    config=tmpConfig
-    config["dataPath"]=TBKPath
-    with open(filepath, 'w') as f: # use write file fn
-        json.dump(config, f, indent=4)
-    reload_data_file()
+    
+
+    
+
 def search_cred(): # DONE
     global tempData
     data=tempData
@@ -1020,6 +1046,8 @@ def view_data():
     print(data)
 
 def change_email():
+    console.print(f"[yellow on blue] current Email : [yellow on black]{tempData.get("email")}")
+
     newEmail=Prompt.ask(f"\t\t[yellow bold]Insert New Email")
     console.print(f"\t\t [blue on green] NEW EMAIL [bold #ff00ff on #000000]>{newEmail}<", justify="center")
     options=[
@@ -1040,8 +1068,9 @@ def change_email():
 def change_path():
     global tmpConfig
     config=tmpConfig
-    console.print(f"[yellow on blue] Data Path : [yellow on black]={config.get("dataPath")}")
+    console.print(f"[yellow on blue] Data Path : [yellow on black]{config.get("dataPath")}")
     set_data_file()
+    reload_data_file()
 
 def path_type_identifier(path):
     osType=get_os_type()
@@ -1049,9 +1078,7 @@ def path_type_identifier(path):
         pass
     if osType=="Linux":
         pass
-    print(path)
-    path=path.replace("/","\\")
-    print(path)
+
     if not "\\" in path:
         pathType="unspecified"
     elif path[0].lower()=="c":
@@ -1072,3 +1099,27 @@ def evaluate_path(path,pathType):
         TBKPath=path
     
     return TBKPath
+
+def configurations():
+    while True:
+        options=[
+        {
+            "V":"View Data"
+        },
+        {
+            "E": "Change Email"
+        },
+        {
+            "P": "Change Data File Path"
+        }
+    ]
+        choice=prompt_options(options,f"CONFUGURATION MENU","simple")
+        MainMenuOptions={
+                            "V":view_data,
+                            "E":change_email,
+                            "P":change_path
+                        }
+        if choice.lower()=="x" or choice.lower()=="exit":
+            return "done"
+        executer=MainMenuOptions.get(choice.upper())
+        executer()

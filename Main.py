@@ -1,5 +1,5 @@
-from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2
-# TemporaryKeyHolder=""
+from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2,configurations
+
 display_intro()
 while True:
     isConfigAvailable=checkFile("./TBKfiles/config.json")
@@ -24,13 +24,7 @@ while True:
                         "A":"Add Credential"
                     },
                     {
-                        "V":"View Data"
-                    },
-                    {
-                        "E": "Change Email"
-                    },
-                    {
-                        "P": "Change Data File Path"
+                        "C":"Configurations"
                     }
                     ]
                 while True:
@@ -40,9 +34,7 @@ while True:
                         "N":show_notif,
                         "S":search_cred,
                         "A":add_cred,
-                        "V":view_data,
-                        "E":change_email,
-                        "P":change_path
+                        "C":configurations,
                     }
                     executer=MainMenuOptions.get(choice.upper())
                     executer()
