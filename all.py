@@ -444,6 +444,7 @@ def load_data_fileV2():
                             pass
                     #-----Get Master Password and decryption lv2 -------------------------------------------    
                     if TemporaryKeyHolder=="":
+                        console.print(Panel(f"{path}",padding=(0,0),style="bold white on green"),justify="center")
                         masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
                         masterKey=generate_fernet_key_from_password(masterPWD2)
                         TemporaryKeyHolder=masterKey
@@ -451,8 +452,23 @@ def load_data_fileV2():
                     try:
                         decryptedCred=decrypt_data(original_bytes,masterKey)
                     except Exception as e:
-                        console.print(f"invalid Master Password : Exiting Program {e}")
-                        quit()
+                        console.print(f"invalid Master Password")
+                        console.print(f"Would you like to Enter a different path")
+                        options=[
+                            {
+                                "Y": "yes",
+                            },
+                            {
+                                "N":"no"
+                            }
+                        ]
+                        choise=prompt_options(options,"CREATE NEW FILE","simple")
+                        if choise.lower()=="y":
+                            set_data_file()
+                            reload_data_file()
+                            return tempData
+                        else:
+                            quit()
                     dData["credentials"]=decryptedCred
                     #----Seting Data to memory-------------------------------------------------------------
                     tempData=dData.copy()
@@ -515,6 +531,63 @@ def load_data_fileV2():
                     return "done"
                 elif choise.lower()=="n":
                     return "done"
+        else:
+            #--- Handling Edge case, where the configuration with data path exists but the file dose not
+            console.print(f"The File dose not Exist, Would you like to start from an empty file?")
+            options=[
+                    {
+                        "Y": "yes",
+                    },
+                    {
+                        "N":"no"
+                    }
+                ]
+            choise=prompt_options(options,"CREATE NEW FILE","simple")
+            if choise.lower()=="y":
+                filepath="./TBKfiles/config.json"
+                config["dataPath"]=tmpTBKpath
+                try:
+                    with open(filepath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                except Exception as e:
+                    print(e)
+                
+                confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
+                masterPWD=Prompt.ask(f"Insert Master Password")
+                masterPWD2=Prompt.ask(f"confirm Master Password")
+                if masterPWD!=masterPWD2:
+                    return "done"
+                masterKey=generate_fernet_key_from_password(masterPWD2)
+                TemporaryKeyHolder=masterKey
+                pltform=get_os_type()
+                deviceID=get_dev_id(pltform)
+                template={
+                    "systemConstants":{
+                    "ChrBlackList":[],
+                    "OptionalChrBlackList":[],
+                    "defaultPasswordLength":17,
+                    },
+                    
+                    "lastId":{},
+                    "email":confirmationEmail,
+                    "deviceID":deviceID,
+                    "credentials":[]
+                    }
+                # print("my template ", template)
+                tempData=template.copy()
+                # print("my tempData ", tempData)
+                credentials=[]
+                encryptedCred=encrypt_data(credentials,masterKey)
+                encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
+                template["credentials"]=encryptedCredStr
+                encryptedData=encrypt_data(template)
+                TBKPath=tmpTBKpath
+                writeFile(encryptedData,TBKPath,"bin")
+                return "done"
+            elif choise.lower()=="n":
+                quit()
+            elif choise.lower()=="x" or choise.lower()=="exit":
+                quit()
 
     else:   # returns temp data id it is already loaded, but this should not be needed
         return tempData
@@ -527,8 +600,17 @@ def reload_data_file():
     config=tmpConfig
     if config.get("dataPath")!=None:
         path=config.get("dataPath")
+        if path!=tmpTBKpath:
+            path=tmpTBKpath
         if os.path.exists(path):
             try:
+                filepath="./TBKfiles/config.json"
+                config["dataPath"]=tmpTBKpath
+                try:
+                    with open(filepath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                except Exception as e:
+                    print(e)
                 #-----Getting encrypted data and doing decryption lv1-----------------------------------
                 encrypted=readFile(path,"bin") 
                 dData=decrypt_data(encrypted)
@@ -620,7 +702,7 @@ def reload_data_file():
         # other code should just use global data to minimize repetetive decryption and loading
 
 def save_data_file(input,mode="add cred"): # DONE
-    print("accessing temporary key holder from", __file__)
+    # print("accessing temporary key holder from", __file__)
     global tempData
     global tmpConfig
     dataFile=tempData
@@ -642,6 +724,8 @@ def save_data_file(input,mode="add cred"): # DONE
                 break
     elif mode=="change email":
         dataFile["email"]=input
+    elif mode=="master_change":
+        pass
     tempData=dataFile.copy()
     encryptedCred=encrypt_data(dataFile.get("credentials"),TemporaryKeyHolder)
     encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
@@ -687,9 +771,6 @@ def set_data_file(): # DONE
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
 
-    
-
-    
 
 def search_cred(): # DONE
     global tempData
@@ -1071,6 +1152,26 @@ def change_path():
     console.print(f"[yellow on blue] Data Path : [yellow on black]{config.get("dataPath")}")
     set_data_file()
     reload_data_file()
+    console.print(f"[bold purple] Data path Updated !", justify="center")
+
+def change_master():
+    global TemporaryKeyHolder
+    oldPwd=Prompt.ask(f"\t\t\t [bold yellow] Insert Previous Password")
+    masterKey=generate_fernet_key_from_password(oldPwd)
+    if masterKey!=TemporaryKeyHolder:
+        console.print(f"[red]Invalid Password",justify="center")
+        return "done"
+    else:
+        newPwd=Prompt.ask(f"\t\t\t [bold yellow] Insert New Password")
+        newPwd2=Prompt.ask(f"\t\t\t [bold yellow] Insert New Password again")
+        if newPwd!=newPwd2:
+            console.print(f"[red]Passwords do not match",justify="center")
+            return "done"
+        else:
+            newMasterKey=generate_fernet_key_from_password(newPwd2)
+            TemporaryKeyHolder=newMasterKey
+            save_data_file(None,"master_change")
+            console.print(f"[bold purple] Master password Updated !", justify="center")
 
 def path_type_identifier(path):
     osType=get_os_type()
@@ -1111,13 +1212,17 @@ def configurations():
         },
         {
             "P": "Change Data File Path"
-        }
+        },
+        {
+            "M":"Change Master Password"
+        },
     ]
         choice=prompt_options(options,f"CONFUGURATION MENU","simple")
         MainMenuOptions={
                             "V":view_data,
                             "E":change_email,
-                            "P":change_path
+                            "P":change_path,
+                            "M":change_master
                         }
         if choice.lower()=="x" or choice.lower()=="exit":
             return "done"
