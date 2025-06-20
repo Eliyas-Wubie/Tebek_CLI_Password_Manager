@@ -1,2 +1,7 @@
-1. update Master password feature # re encrypt datw with new key and overwrite file
-2. re-origanize files
+1. argument handler feature.
+2. Handle Path name defination x,exit as an exit.
+3. Convert device id to an array to allow multiple devices.
+4. make the confirmation simpler if possible
+5. Make the file management simpler. i.e proton/other integration
+6. remove the need for config file if possible. 
+7. re-work keywords to be incerted

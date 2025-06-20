@@ -22,7 +22,7 @@ import platform
 import subprocess
 import uuid
 import os, json, re
-from cryptography.fernet import Fernet
+
 console = Console()
 TemporaryKeyHolder=""
 tempData=""

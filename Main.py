@@ -1,4 +1,11 @@
-from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2,configurations
+# from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2,configurations
+################# NEW------------------------------------
+from Util.TerminalOps import display_intro,prompt_options
+from Util.GeneratorOps import generate_credential_id
+from Util.CredentialOps import search_cred,add_cred,update_cred,show_notif
+from Util.FileOps import load_config,set_data_file,readFile,checkFile,load_data_fileV2,console
+from Util.ConfigrationOps import view_data,change_email,change_path,configurations
+
 
 display_intro()
 while True:
