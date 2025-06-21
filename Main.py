@@ -1,11 +1,27 @@
 # from all import display_intro, prompt_options, console, generate_credential_id,search_cred,add_cred,update_cred,show_notif, load_config, set_data_file, readFile, checkFile, view_data, change_email, change_path, load_data_fileV2,configurations
 ################# NEW------------------------------------
-from Util.TerminalOps import display_intro,prompt_options
-from Util.GeneratorOps import generate_credential_id
-from Util.CredentialOps import search_cred,add_cred,update_cred,show_notif
-from Util.FileOps import load_config,set_data_file,readFile,checkFile,load_data_fileV2,console
-from Util.ConfigrationOps import view_data,change_email,change_path,configurations
+import argparse
 
+from Util.TerminalOps import display_intro,prompt_options
+from Util.CredentialOps import search_cred,add_cred,show_notif
+from Util.FileOps import load_config,set_data_file,checkFile,load_data_fileV2
+from Util.ConfigrationOps import configurations
+
+
+AP=argparse.ArgumentParser(description="single letter argument")
+
+AP.add_argument("-n",action="store_true",help="notifications")
+AP.add_argument("-s",help="search")
+AP.add_argument("-a",help="notifications")
+AP.add_argument("-c",help="notifications")
+
+args=AP.parse_args()
+print(args.n)
+print(args.s)
+quit()
+# argsList=[]
+# if arg[0] in argsList:
+#     pass
 
 display_intro()
 while True:
