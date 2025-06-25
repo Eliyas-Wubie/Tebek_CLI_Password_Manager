@@ -54,25 +54,28 @@ def prompt_options(options,title="OPTIONS",mode="main",more=""): # DONE
             value=prompt_options(options,title,mode)
             return value
 
-def display_collections(data,title="DATA",mode="search"):
+def display_collections(data,title="DATA",mode="search",SN=None):
     console.rule(title)
     if mode=="search":
-        console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Password>":<{10}}")
-        for i in range(len(data)):
-            activePassword="No Active Password"
-            for pwd in data[i].get("passwords"):
-                if pwd.get("current"):
-                    activePassword=pwd.get("password")
-            keywords="/".join(data[i].get("keywords"))
-            keywords=keywords[:20-3]+"..."
-            sn="<"+str(i)+">"
-            console.print(f"{sn:<{4}} \t {keywords:<{20}} \t {data[i].get("username"):<{25}} \t {activePassword:<{10}}")
-        resultCount=len(data)
-        info=f"[green on blue] Found CREDENTIALS [bold #ff00ff on #000000] > {resultCount} < "
-        allignedInfo=Align.center(info)
-        console.print(allignedInfo)
-        console.rule(f"'X' or 'exit' to leave")
-        choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
+        if SN==None:
+            console.print(f"{"<SN>":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Password>":<{10}}")
+            for i in range(len(data)):
+                activePassword="No Active Password"
+                for pwd in data[i].get("passwords"):
+                    if pwd.get("current"):
+                        activePassword=pwd.get("password")
+                keywords="/".join(data[i].get("keywords"))
+                keywords=keywords[:20-3]+"..."
+                sn="<"+str(i)+">"
+                console.print(f"{sn:<{4}} \t {keywords:<{20}} \t {data[i].get("username"):<{25}} \t {activePassword:<{10}}")
+            resultCount=len(data)
+            info=f"[green on blue] Found CREDENTIALS [bold #ff00ff on #000000] > {resultCount} < "
+            allignedInfo=Align.center(info)
+            console.print(allignedInfo)
+            console.rule(f"'X' or 'exit' to leave")
+            choise=Prompt.ask(f"[bold yellow]\tInsert Serial Number for Detail and Action ")
+        else:
+            choise=SN
         if choise.isdigit():
             if -1<int(choise)<len(data):
                 resp=display_collections(data[int(choise)],"SINGLE","search_single")

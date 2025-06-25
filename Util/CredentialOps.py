@@ -60,16 +60,19 @@ def add_cred(): #DONE
     elif choise.upper()=="EXIT":
         return "done"
 
-def search_cred(): # DONE
+def search_cred(s=None,SN=None): # DONE
     from Util.TerminalOps import prompt_options,display_collections
 
     data=globals.tempData
     creds=data.get("credentials")
-    query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain (* for all) ")
+    if s==None:
+        query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain (* for all) ")
+    else:
+        query=s
     if query.lower()=="x" or query.lower()=="exit":
         return "done"
     elif query.lower()=="*":
-        resp=display_collections(creds)
+        resp=display_collections(creds,SN=SN)
         if resp=="exit":
             return "done"
     query=f".*{query}.*"
@@ -85,37 +88,41 @@ def search_cred(): # DONE
         console.print(f"[yellow] No data available")
         return "done"
     else:
-        display_collections(result)    
+        display_collections(result,SN=SN)    
 
-def update_cred(data): # DONE
+def find_cred():
+    pass
+
+def update_cred(data,mode="terminalUI"): # DONE
     from Util.TerminalOps import prompt_options,display_collections
-
-    userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
-    keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
-    createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N) ") # insert domains/keyword
-    while createNewPassword.lower()!="y" and createNewPassword.lower()!="n" and createNewPassword.lower()!="x" and createNewPassword.lower()!="exit" and createNewPassword!="":
-        print(createNewPassword)
-        createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N)") # insert domains/keyword
-    if createNewPassword.lower()=="x" or createNewPassword.lower()=="exit":
-        return "done"
-    if createNewPassword=="":
-        createNewPassword="n"
-    keywords=keywords.replace(" ","")
-    keywordsList=keywords.split(",")
+    if mode=="terminalUI":
+        userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
+        keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
+        createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N) ") # insert domains/keyword
+        while createNewPassword.lower()!="y" and createNewPassword.lower()!="n" and createNewPassword.lower()!="x" and createNewPassword.lower()!="exit" and createNewPassword!="":
+            print(createNewPassword)
+            createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N)") # insert domains/keyword
+        if createNewPassword.lower()=="x" or createNewPassword.lower()=="exit":
+            return "done"
+        if createNewPassword=="":
+            createNewPassword="n"
+        keywords=keywords.replace(" ","")
+        keywordsList=keywords.split(",")
     
     # generate and display password
-    if createNewPassword=="y":
-        password=generate_new_password()
-    elif createNewPassword=="n":
-        for pwd in data.get("passwords"):
-            if pwd.get("current")==True:
-                password=pwd.get("password")
-            else:
-                password=data.get("passwords")[-1]
-    if userName=="":
-        userName=data.get("username")
-    if keywords=="":
-        keywordsList=data.get("keywords")
+        if createNewPassword=="y":
+            password=generate_new_password()
+        elif createNewPassword=="n":
+            for pwd in data.get("passwords"):
+                if pwd.get("current")==True:
+                    password=pwd.get("password")
+                else:
+                    password=data.get("passwords")[-1]
+        if userName=="":
+            userName=data.get("username")
+        if keywords=="":
+            keywordsList=data.get("keywords")
+    elif mode=="argument"
     # display domain, username, password
     console.rule(f"Keywords")
     for item in keywordsList:

@@ -1,7 +1,15 @@
-1. argument handler feature.
-2. Handle Path name defination x,exit as an exit.
+1. argument handler feature. <ARG_Parser>
+    a. add a credntial in a single line -a ela@adahdkah "this,this,this"
+    b. get credential in a single line 
+    c. change Master password in a single line
+    d. change email
+    d. change file path in single line
+    e. view expired creds
+2. Handle Path name defination x,exit as an exit. 
 3. Convert device id to an array to allow multiple devices.
-4. make the confirmation simpler if possible
+4. make the confirmation simpler if possible <Add_resend_guide>
 5. Make the file management simpler. i.e proton/other integration
 6. remove the need for config file if possible. 
 7. re-work keywords to be incerted
+8. when detail cred is accessd copy to clipboard
+9. add cred should also allow entering password / or not?
