@@ -4,32 +4,21 @@ import argparse
 import sys
 
 from Util.TerminalOps import display_intro,prompt_options
-from Util.CredentialOps import search_cred,add_cred,show_notif, find_cred
+from Util.CredentialOps import search_cred,add_cred,show_notif, find_cred,update_cred,view_password_history
 from Util.FileOps import load_config,set_data_file,checkFile,load_data_fileV2
 from Util.ConfigrationOps import configurations
 
 
 AP=argparse.ArgumentParser(description="single letter argument")
 
-# AP.add_argument('-n', '--notif', action='store_true', dest='n',help='A number input')
-# AP.add_argument('-s', '--search', type=str, dest='s',help='A number input')
-# AP.add_argument('-a', '--add', type=str, dest='n', help='A number input')
-# AP.add_argument('-c', '--config', type=str, dest='n', help='A number input')
-# AP.add_argument('--SN', type=str, help='A number input')
-##########################################################################
-
-AP.add_argument("-a",nargs=3, metavar=('domain', 'username', 'password'),default=['','',''],dest="a",help="Add Credential")
+AP.add_argument("-a",nargs=3, metavar=('domain', 'username', 'password'),default=['-','-','-'],dest="a",help="Add Credential [Domain Username Password]")
 # args.a will be an array containing the incerted series of items
-AP.add_argument("-f",nargs=2, metavar=('domain', 'username'),default=['',''],dest="f",help="Find Credential")
-# args.f will be an array containing the incerted series of items
-AP.add_argument("-sd",nargs=1, metavar=('domain'),default=[''],dest="sd",help="Search Credential using domain")
-# args.sd will be an array containing the incerted series of items
-AP.add_argument("-su",nargs=1, metavar=('username'),default=[''],dest="su",help="Search Credential using username")
-# args.su will be an array containing the incerted series of items
-AP.add_argument("-s",nargs=1, metavar=('domain or username'),default=[''],dest="s",help="Search Credential")
-# args.s will be an array containing the incerted series of items
-AP.add_argument("-u",nargs=3, metavar=('id','domain', 'username', 'password'),default=['','','',''],dest="u",help="Update Credential")
-# args.a will be an array containing the incerted series of items
+AP.add_argument("-f",nargs=1, metavar=('id'),default=['-'],dest="f",help="Find Credential [Id]")
+AP.add_argument("-sd",nargs=1, metavar=('domain'),default=['-'],dest="sd",help="Search Credential using domain")
+AP.add_argument("-su",nargs=1, metavar=('username'),default=['-'],dest="su",help="Search Credential using username")
+AP.add_argument("-s",nargs=1, metavar=('domain or username'),default=['-'],dest="s",help="Search Credential")
+AP.add_argument("-u",nargs=4, metavar=('id','domain', 'username', 'password'),default=['-','-','-','-'],dest="u",help="Update Credential")
+AP.add_argument("-vh",nargs=1, metavar=('id'),default=['-'],dest="vh",help="View Credential Password History")
 
 args=AP.parse_args()
 
@@ -99,29 +88,20 @@ else:
             if isDataFileAvailable:
                 data=load_data_fileV2()
                 credentialCount=len(data.get("credentials"))
-                #------------------Option One----------------------
-                # if args.n:
-                #     show_notif()
-                # elif args.s:
-                #     search_cred(args.s,args.SN)
-                # elif args.a:
-                #     add_cred()
-                # elif args.c:
-                #     configurations()
-                #-------------Option Two----------------------------
-                if args.a:
+                if args.a!=['-','-','-']: #handled -tesed
                     add_cred(args.a)
-                elif args.f:
+                elif args.f!=['-']: #handled - tested
                     find_cred(args.f)
-                elif args.sd:
-                    search_cred(args.sd)
-                elif args.su:
-                    search_cred(args.su)
-                elif args.s:
-                    search_cred(args.s)
-                elif args.u:
-                    # update_cred(args.u)
-                    pass
+                elif args.sd!=["-"]: #handled - tasted
+                    search_cred(args.sd,["keywords"])
+                elif args.su!=["-"]: #handled - tasted
+                    search_cred(args.su,["username"])
+                elif args.s!=["-"]: #handled - tasted
+                    search_cred(args.s,["username","keywords"])
+                elif args.u!=['-','-','-','-']: #handled - tasted
+                    update_cred(arg=args.u)
+                elif args.vh!=['-']:
+                    view_password_history(arg=args.u)
                 else:
                     quit()                
             else:

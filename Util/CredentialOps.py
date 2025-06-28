@@ -2,26 +2,67 @@ from Util import globals
 import re
 
 from rich.prompt import Prompt
-from rich.console import Console
 from datetime import datetime, timedelta
 
 from Util.FileOps import save_data_file,console
 from Util.GeneratorOps import generate_new_password,generate_credential_id
 
-def add_cred(): #DONE 
-    from Util.TerminalOps import prompt_options,display_collections
-    userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
-    keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
-    keywords=keywords.replace(" ","")
-    keywordsList=keywords.split(",")
+def add_cred(arg=None): #DONE 
+    from Util.TerminalOps import prompt_options
+    if arg==None:
+        userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
+        if userName.lower()=="exit" or userName.lower()=="x":
+            return "done"
+        keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
+        if keywords.lower()=="exit" or keywords.lower()=="x":
+            return "done"
+        keywords=keywords.replace(" ","")
+        keywordsList=keywords.split(",")
+        PasswordOption=Prompt.ask("[bold yellow]\t\tGenerate or Input password(G\\I)?")
+        if PasswordOption.lower()=='g':
+            password=generate_new_password()
+        elif PasswordOption.lower()=='i':
+            password=Prompt.ask("[bold yellow]\t\tInsert Password ") 
+            if password.lower()=="exit" or password.lower()=="x":
+                return "done"
+        elif PasswordOption.lower()=="exit" or PasswordOption.lower()=="x":
+            return "done"
+        # generate and display password
+        # display domain, username, password
+        
+    else:
+        keywords=arg[0]
+        keywordsList=keywords.split(",")
+        
+        userName=arg[1]
+        if arg[2].lower()=="_" or arg[2].lower()=="-":
+            password=generate_new_password()
+        else:
+            password=arg[2]
+        expire=datetime.now()+timedelta(30)# delta should be read from config
+        template={
+            "id":generate_credential_id(),
+            "keywords":keywordsList,
+            "username":userName,
+            "createdAt":datetime.now().isoformat(),
+            "updatedAt":"",
+            "passwords":[
+                {
+                    "password":password,
+                    "startDate":datetime.now().isoformat(),
+                    "expireDate":expire.isoformat(),
+                    "current":True
+                }
+                ]
+        }
+        save_data_file(template,"add cred")
+        console.print(f"[bold purple] New Credential Saved !", justify="center")
+        quit()
     
-    # generate and display password
-    password=generate_new_password()
-    # display domain, username, password
     console.rule(f"Keywords")
     for item in keywordsList:
         console.print(f"\t{item}",end="")
-    console.print("")
+    console.print("") 
     console.rule(f"",style="blue")
     console.print(f"\t[bold blue]Username ", userName)
     console.print(f"\t[bold blue]Password ", password)
@@ -60,122 +101,214 @@ def add_cred(): #DONE
     elif choise.upper()=="EXIT":
         return "done"
 
-def search_cred(s=None,SN=None): # DONE
-    from Util.TerminalOps import prompt_options,display_collections
+def search_cred(arg=None, typ=None): # DONE
+    from Util.TerminalOps import display_collections
 
     data=globals.tempData
     creds=data.get("credentials")
-    if s==None:
+    if arg==None:
         query=Prompt.ask(f"[bold yellow]\tInsert Keyword/Domain (* for all) ")
+        if query.lower()=="x" or query.lower()=="exit":
+            return "done"
+        elif query.lower()=="*":
+            resp=display_collections(creds)
+            if resp=="exit":
+                return "done"
     else:
-        query=s
-    if query.lower()=="x" or query.lower()=="exit":
-        return "done"
-    elif query.lower()=="*":
-        resp=display_collections(creds,SN=SN)
+        query=arg[0]
+    if query!="*":
+        query=f".*{query.lower()}.*"
+
+        result=[]
+        for cred in creds:
+            if "keywords" in typ:    
+                for keyword in cred.get("keywords"):
+                    check = re.search(query,keyword.lower())
+                    # print("domain check",check)
+                    if check:
+                        result.append(cred)
+                        break
+            if "username" in typ:
+                # print(cred.get("username").lower())
+                check = re.search(query,cred.get("username").lower())
+                # print("username check",check)
+                
+                if check and not cred in result:
+                    result.append(cred)
+                    break
+        # result=set(result)
+        # result=list(result)
+        if result==[]:
+            console.print(f"[yellow] No data available")
+            return "done"
+        else:
+            display_collections(result,arg=True)    
+    else:
+        resp=display_collections(creds,arg=True)
         if resp=="exit":
             return "done"
-    query=f".*{query}.*"
 
-    result=[]
-    for cred in creds:    
-        for keyword in cred.get("keywords"):
-            check = re.search(query,keyword)
-            if check:
-                result.append(cred)
-                break
-    if result==[]:
-        console.print(f"[yellow] No data available")
-        return "done"
+def find_cred(arg): #DONE
+    from Util.TerminalOps import display_collections
+    data=globals.tempData
+    creds=data.get("credentials")
+    result=""
+    for cred in creds:
+        if cred.get("id")==arg[0]:
+            result=cred
+            break
+    if result=="":
+        # output console
+        console.rule("credential")
+        console.print(f"[bold red]Credential Not Found", justify="center")
+        pass
     else:
-        display_collections(result,SN=SN)    
+        # output console
+        display_collections(result,mode="search_single",arg=True)
+        pass
 
-def find_cred():
-    pass
-
-def update_cred(data,mode="terminalUI"): # DONE
-    from Util.TerminalOps import prompt_options,display_collections
-    if mode=="terminalUI":
+def update_cred(data=None,arg=None): # DONE
+    from Util.TerminalOps import prompt_options
+    if arg==None:
         userName=Prompt.ask("[bold yellow]\t\tInsert Username ") # insert username
+        if userName.lower()=="exit" or userName.lower()=="x":
+            return "done"
         keywords=Prompt.ask("[bold yellow]\t\tInsert Domains/keywords ") # insert domains/keyword
-        createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N) ") # insert domains/keyword
-        while createNewPassword.lower()!="y" and createNewPassword.lower()!="n" and createNewPassword.lower()!="x" and createNewPassword.lower()!="exit" and createNewPassword!="":
-            print(createNewPassword)
-            createNewPassword=Prompt.ask("[bold yellow]\t\tGenerate New Password(Y/N)") # insert domains/keyword
+        if keywords.lower()=="exit" or keywords.lower()=="x":
+            return "done"
+        createNewPassword=Prompt.ask("[bold yellow]\t\tKeep,Generate, or Input password(K\\G\\I)?") # insert domains/keyword
+        while createNewPassword.lower()!="k" and createNewPassword.lower()!="g" and createNewPassword.lower()!="i" and createNewPassword.lower()!="x" and createNewPassword.lower()!="exit" and createNewPassword!="":
+            console.print(f"[bold red]invalid input {createNewPassword}", justify="center")
+            createNewPassword=Prompt.ask("[bold yellow]\t\tKeep,Generate, or Input password(K\\G\\I)?") # insert domains/keyword
         if createNewPassword.lower()=="x" or createNewPassword.lower()=="exit":
             return "done"
-        if createNewPassword=="":
-            createNewPassword="n"
+        if createNewPassword.lower()=="":
+            createNewPassword="k"
+        
         keywords=keywords.replace(" ","")
         keywordsList=keywords.split(",")
     
     # generate and display password
-        if createNewPassword=="y":
+        if createNewPassword.lower()=="g":
             password=generate_new_password()
-        elif createNewPassword=="n":
+        elif createNewPassword.lower()=="k":
             for pwd in data.get("passwords"):
                 if pwd.get("current")==True:
                     password=pwd.get("password")
+                    break
                 else:
                     password=data.get("passwords")[-1]
+        elif createNewPassword.lower()=="i":
+            password=password=Prompt.ask("[bold yellow]\t\tInsert Password ")
+            if keywords.lower()=="exit" or keywords.lower()=="x":
+                return "done"
         if userName=="":
             userName=data.get("username")
         if keywords=="":
             keywordsList=data.get("keywords")
-    elif mode=="argument"
-    # display domain, username, password
-    console.rule(f"Keywords")
-    for item in keywordsList:
-        console.print(f"\t{item}",end="")
-    console.print("")
-    console.rule(f"",style="blue")
-    console.print(f"\t[bold blue]Username ", userName)
-    console.print(f"\t[bold blue]Password ", password)
-    # show options 
-    options=[
-        {
-            "A":"Accept"
-        },
-        {
-            "C":"change Domain and email"
-        },
-        {
-            "x":"discard and exit"
-        }
-    ]
-    
-    choise=prompt_options(options,"CONFIRMATION","simple")
-    if choise.lower()=="a": # adjust this loigic to append
-        expire=datetime.now()+timedelta(30)# delta should be read from config
-        for pwd in data.get("passwords"):
-            pwd["current"]=False
-        data.get("passwords").append(
+                # display domain, username, password
+        console.rule(f"Keywords")
+        for item in keywordsList:
+            console.print(f"\t{item}",end="")
+        console.print("")
+        console.rule(f"",style="blue")
+        console.print(f"\t[bold blue]Username ", userName)
+        console.print(f"\t[bold blue]Password ", password)
+        # show options 
+        options=[
             {
-                    "password":password,
-                    "startDate":datetime.now().isoformat(),
-                    "expireDate":expire.isoformat(),
-                    "current":True
+                "A":"Accept"
+            },
+            {
+                "C":"change Domain and email"
+            },
+            {
+                "x":"discard and exit"
             }
-        )
-        data={
-            "id":data.get("id"),
-            "keywords":keywordsList,
-            "username":userName,
-            "createdAt":data.get("createdAt"),
-            "updatedAt":datetime.now().isoformat(),
-            "passwords":data.get("passwords")
-        }
+        ]
+        
+        choise=prompt_options(options,"CONFIRMATION","simple")
+        if choise.lower()=="a": # adjust this loigic to append
+            expire=datetime.now()+timedelta(30)# delta should be read from config
+            for pwd in data.get("passwords"):
+                pwd["current"]=False
+            data.get("passwords").append(
+                {
+                        "password":password,
+                        "startDate":datetime.now().isoformat(),
+                        "expireDate":expire.isoformat(),
+                        "current":True
+                }
+            )
+            data={
+                "id":data.get("id"),
+                "keywords":keywordsList,
+                "username":userName,
+                "createdAt":data.get("createdAt"),
+                "updatedAt":datetime.now().isoformat(),
+                "passwords":data.get("passwords")
+            }
+            send={
+                "id":data.get("id"),
+                "updatedData":data
+            }
+            save_data_file(send,"update cred")
+            console.print(f"[bold purple] Credential Updated !", justify="center")
+            return data
+        elif choise.lower()=="c": # recursive call
+            update_cred(data)
+        elif choise=="x" or choise=="X": # exit
+            return "done"
+    else:
+        #data[0]=id
+        #data[1]=domain
+        #data[2]=username
+        #data[3]=password
+        data=arg
+        expire=datetime.now()+timedelta(30)# delta should be read from config
+        credFound=False
+        for item in globals.tempData.get("credentials"):
+            if item.get("id")==data[0]:
+                credFound=True
+                if data[1]!='-' and data[1]!='_':
+                    rawKeywords=data[1]
+                    newKeywords=rawKeywords.split(",")
+                    item["keywords"]=newKeywords
+                if data[2]!='-' and data[2]!='_':
+                    item['username']=data[2]
+                if data[3]!='-' and data[3]!='_':
+                    for pwd in item.get("passwords"):
+                        if pwd.get("current")==True:
+                            currentPwd=pwd.get("password")
+                        pwd["current"]=False
+                    if data[3].lower()=="keep":
+                        newPassword=currentPwd
+                    elif data[3].lower()=="regen":
+                        newPassword=generate_new_password()
+                    else:
+                        newPassword=data[3]
+                    item.get("passwords").append(
+                    {
+                            "password":newPassword,
+                            "startDate":datetime.now().isoformat(),
+                            "expireDate":expire.isoformat(),
+                            "current":True
+                    }
+                    )
+                sendData=item
+        if not credFound:
+            console.print(f"[bold red] CredentialID {data[0]} Not found", justify="center")
+            quit()
         send={
-            "id":data.get("id"),
-            "updatedData":data
-        }
+                "id":data[0],
+                "updatedData":sendData
+            }    
         save_data_file(send,"update cred")
         console.print(f"[bold purple] Credential Updated !", justify="center")
-        return data
-    elif choise.lower()=="c": # recursive call
-        update_cred(data)
-    elif choise=="x" or choise=="X": # exit
-        return "done"
+        console.print(f"[bold Yellow on green] Password:{newPassword}", justify="center")
+        quit()
+        return sendData
+
     return "done"
 
 def del_cred(data): # DONE
