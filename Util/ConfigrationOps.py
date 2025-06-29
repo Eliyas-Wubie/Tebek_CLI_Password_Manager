@@ -9,7 +9,7 @@ from Util.FileOps import save_data_file,set_data_file,reload_data_file,console
 
 def view_data():
     data=globals.tempData
-
+    print("Debug-Current config")
 def change_email():
     console.print(f"[yellow on blue] current Email : [yellow on black]{globals.tempData.get("email")}")
 
