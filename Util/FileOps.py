@@ -423,6 +423,7 @@ def checkFile(path):
 def path_type_identifier(path):
     osType=get_os_type()
     print("TEST - os type",osType)
+    print("TEST - path",path)
     if osType=="Windows":
         if not "\\" in path:
             pathType="unspecified"
