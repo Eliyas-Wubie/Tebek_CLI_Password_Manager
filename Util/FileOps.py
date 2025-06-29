@@ -17,8 +17,7 @@ def load_data_fileV2():
     from Util.TerminalOps import prompt_options
     if globals.tempData=="": # if empty actually decrypt and load
         config=globals.tmpConfig
-        if config.get("dataPath")!=None:
-            currentPlatform=get_os_type()
+        if globals.tmpTBKpath!=None:
             path=config.get("dataPath")
             if os.path.exists(path):
                 try:
@@ -364,6 +363,7 @@ def set_data_file(): # DONE
     pathType=path_type_identifier(path)
     TBKPath=evaluate_path(path,pathType)
     globals.tmpTBKpath=TBKPath
+    # globals.tmpConfig["dataPath"]=TBKPath ISSUE HERE
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
 

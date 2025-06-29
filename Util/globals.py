@@ -1,5 +1,5 @@
 TemporaryKeyHolder=""
 tempData=""
 tmpConfig=""
-tmpTBKpath=""
+tmpTBKpath=None
 tmpConfigPath=""
