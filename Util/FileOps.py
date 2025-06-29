@@ -19,10 +19,10 @@ def load_data_fileV2():
         config=globals.tmpConfig
         if globals.tmpTBKpath!=None:
             path=config.get("dataPath")
-            if os.path.exists(path):
+            if os.path.exists(globals.tmpTBKpath):
                 try:
                     #-----Getting encrypted data and doing decryption lv1-----------------------------------
-                    encrypted=readFile(path,"bin") 
+                    encrypted=readFile(globals.tmpTBKpath,"bin") 
                     dData=decrypt_data(encrypted)
                     #-----Device Check and email confirmation ----------------------------------------------
                     pltform=get_os_type()
@@ -38,11 +38,11 @@ def load_data_fileV2():
                         else:
                             dData['deviceID']=devID
                             eData=encrypt_data(dData)
-                            writeFile(eData,path,"bin")
+                            writeFile(eData,globals.tmpTBKpath,"bin")
                             print("data owner changed")
                     #-----Get Master Password and decryption lv2 -------------------------------------------    
                     if globals.TemporaryKeyHolder=="":
-                        console.print(Panel(f"{path}",padding=(0,0),style="bold white on green"),justify="center")
+                        console.print(Panel(f"{globals.tmpTBKpath}",padding=(0,0),style="bold white on green"),justify="center")
                         masterPWD2=Prompt.ask("[bold yellow]\tMaster Password ", password=True)
                         masterKey=generate_fernet_key_from_password(masterPWD2)
                         globals.TemporaryKeyHolder=masterKey
@@ -72,7 +72,7 @@ def load_data_fileV2():
                     globals.tempData=dData.copy()
                     return dData
                 except json.JSONDecodeError:
-                    print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
+                    print(f"Warning: File '{globals.tmpTBKpath}' is not valid JSON. Creating a new file with default data.")
             else:
                 console.print(f"The File dose not Exist, Would you like to start from an empty file?")
                 options=[
