@@ -73,6 +73,7 @@ if len(sys.argv) == 1:
                         executer=MainMenuOptions.get(choice.upper())
                         executer()
                 else:
+                    print("calling set data file from main IsDatafileavailanle is false")
                     set_data_file()
                     load_data_fileV2()
                     dataPath=config.get("dataPath")
@@ -80,6 +81,7 @@ if len(sys.argv) == 1:
                     if not isDataFileAvailable:
                         quit()
             else:
+                print("calling set data file from main dataPath is none")
                 set_data_file()
                 load_data_fileV2()
                 dataPath=config.get("dataPath")

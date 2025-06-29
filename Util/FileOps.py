@@ -63,6 +63,7 @@ def load_data_fileV2():
                         ]
                         choise=prompt_options(options,"CREATE NEW FILE","simple")
                         if choise.lower()=="y":
+                            print("calling set data file from load v2")
                             set_data_file()
                             reload_data_file()
                             return globals.tempData
@@ -427,7 +428,7 @@ def path_type_identifier(path):
     print("TEST - os type",osType)
     print("TEST - path",path,path[0],path[0].lower()=="/",path[0].lower()=='/')
     if osType=="Windows":
-        if not "\\" in path:
+        if not "\\" in path and not "/" in path:
             pathType="unspecified"
         elif path[0].lower()=="c":
             pathType="absolut"
