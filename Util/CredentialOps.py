@@ -145,13 +145,12 @@ def search_cred(arg=None, typ=["keywords","username"]): # DONE
             return "done"
         else:
             if arg==None:
-                display_collections(result,arg=True)
+                display_collections(result)
             else:
-                display_collections(result,arg=False)    
+                display_collections(result,arg=True)    
     else:
-        resp=display_collections(creds,arg=True)
-        if resp=="exit":
-            return "done"
+        # this will only be triggerd when arg is used and param is *
+        display_collections(creds,arg=True) 
 
 def find_cred(arg): #DONE
     from Util.TerminalOps import display_collections

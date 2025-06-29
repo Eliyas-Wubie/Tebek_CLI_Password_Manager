@@ -39,7 +39,6 @@ if len(sys.argv) == 1:
         isConfigAvailable=checkFile(configpath)
         if isConfigAvailable:
             config=load_config()
-            print("config",config)
             dataPath=config.get("dataPath")
             if dataPath!=None:
                 isDataFileAvailable=checkFile(dataPath)
@@ -93,7 +92,16 @@ if len(sys.argv) == 1:
             print("Config file not found")
             load_config()
 else:
-    isConfigAvailable=checkFile("./TBKfiles/config.json")
+    currentPlatform=get_os_type()
+    if currentPlatform=="Windows":
+        app_name = "TBK"
+        config_file = "config.json"
+        appdata = os.getenv("APPDATA")
+        appdataPath=os.path.join(appdata, app_name)
+        configpath=os.path.join(appdata, app_name, config_file)
+    else:
+        configpath="./TBKfiles/config.json"
+    isConfigAvailable=checkFile(configpath)
     if isConfigAvailable:
         config=load_config()
         dataPath=config.get("dataPath")
@@ -120,14 +128,14 @@ else:
                     quit()                
             else:
                 set_data_file()
-                load_data_fileV2()
+                load_data_fileV2(initial=True)
                 dataPath=config.get("dataPath")
                 isDataFileAvailable=checkFile(dataPath)
                 if not isDataFileAvailable:
                     quit()
         else:
             set_data_file()
-            load_data_fileV2()
+            load_data_fileV2(initial=True)
             dataPath=config.get("dataPath")
             isDataFileAvailable=checkFile(dataPath)
             if not isDataFileAvailable:
