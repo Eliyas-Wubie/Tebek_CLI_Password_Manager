@@ -105,7 +105,7 @@ def add_cred(arg=None): #DONE
     elif choise.upper()=="EXIT":
         return "done"
 
-def search_cred(arg=None, typ=None): # DONE
+def search_cred(arg=None, typ=["keywords","username"]): # DONE
     from Util.TerminalOps import display_collections
 
     data=globals.tempData
@@ -139,14 +139,15 @@ def search_cred(arg=None, typ=None): # DONE
                 
                 if check and not cred in result:
                     result.append(cred)
-                    break
-        # result=set(result)
-        # result=list(result)
+                    
         if result==[]:
             console.print(f"[yellow] No data available")
             return "done"
         else:
-            display_collections(result,arg=True)    
+            if arg==None:
+                display_collections(result,arg=True)
+            else:
+                display_collections(result,arg=False)    
     else:
         resp=display_collections(creds,arg=True)
         if resp=="exit":

@@ -39,6 +39,7 @@ if len(sys.argv) == 1:
         isConfigAvailable=checkFile(configpath)
         if isConfigAvailable:
             config=load_config()
+            print("config",config)
             dataPath=config.get("dataPath")
             if dataPath!=None:
                 isDataFileAvailable=checkFile(dataPath)
