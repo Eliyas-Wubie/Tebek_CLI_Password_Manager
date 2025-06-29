@@ -76,7 +76,7 @@ if len(sys.argv) == 1:
                 else:
                     print("calling set data file from main IsDatafileavailanle is false")
                     set_data_file()
-                    load_data_fileV2()
+                    load_data_fileV2(initial=True)
                     dataPath=config.get("dataPath")
                     isDataFileAvailable=checkFile(dataPath)
                     if not isDataFileAvailable:
@@ -84,7 +84,7 @@ if len(sys.argv) == 1:
             else:
                 print("calling set data file from main dataPath is none")
                 set_data_file()
-                load_data_fileV2()
+                load_data_fileV2(initial=True)
                 dataPath=config.get("dataPath")
                 isDataFileAvailable=checkFile(dataPath)
                 if not isDataFileAvailable:

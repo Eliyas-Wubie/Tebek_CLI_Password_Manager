@@ -2,6 +2,7 @@ from Util import globals
 import os
 import base64
 import json
+import inspect
 
 from rich.prompt import Prompt
 from rich.console import Console
@@ -13,10 +14,12 @@ from Util.OtherOps import get_os_type,get_dev_id,email_confirmation
 console = Console()
 
 
-def load_data_fileV2():
+def load_data_fileV2(initial=False):
     from Util.TerminalOps import prompt_options
     if globals.tempData=="": # if empty actually decrypt and load
         config=globals.tmpConfig
+        if initial:
+            config["dataPath"]=globals.tmpTBKpath
         if config.get("dataPath")!=None:
             path=config.get("dataPath")
             print("TEST- data path",path)
@@ -72,9 +75,12 @@ def load_data_fileV2():
                     dData["credentials"]=decryptedCred
                     #----Seting Data to memory-------------------------------------------------------------
                     globals.tempData=dData.copy()
+                    if initial:
+                        with open(globals.tmpConfigPath, 'w') as f: # use write file fn
+                            json.dump(config, f, indent=4)
                     return dData
                 except json.JSONDecodeError:
-                    print(f"Warning: File '{path}' is not valid JSON. Creating a new file with default data.")
+                    print(f"Warning: File '{path}' is not valid TBK file. Creating a new file with default data.")
             else:
                 console.print(f"The File dose not Exist, Would you like to start from an empty file?")
                 options=[
@@ -89,11 +95,14 @@ def load_data_fileV2():
                 
                 if choise.lower()=="y":
                     #-----Initial Data file setup--------------------------------------------------------
+                    oldPath=config.get("dataPath")
                     config["dataPath"]=globals.tmpTBKpath
                     try:
                         with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                             json.dump(config, f, indent=4)
                     except Exception as e:
+                        config["dataPath"]=oldPath
+                        globals.tmpTBKpath=oldPath
                         print(e)
                     
                     confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
@@ -126,7 +135,14 @@ def load_data_fileV2():
                     template["credentials"]=encryptedCredStr
                     encryptedData=encrypt_data(template)
                     TBKPath=globals.tmpTBKpath
-                    writeFile(encryptedData,TBKPath,"bin")
+                    
+                    writeStatus=writeFile(encryptedData,TBKPath,"bin")
+                    if writeStatus=="invert":
+                        config["dataPath"]=oldPath
+                        globals.tmpTBKpath=oldPath
+                        with open(globals.tmpConfigPath, 'w') as f: # use write file fn
+                            json.dump(config, f, indent=4)
+                        console.print(f"[red] failed to change data file path")
                     return globals.tempData
                 elif choise.lower()=="n":
                     return "done"
@@ -144,11 +160,14 @@ def load_data_fileV2():
                 ]
             choise=prompt_options(options,"CREATE NEW FILE","simple")
             if choise.lower()=="y":
+                oldPath=config.get("dataPath")
                 config["dataPath"]=globals.tmpTBKpath
                 try:
                     with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                         json.dump(config, f, indent=4)
                 except Exception as e:
+                    config["dataPath"]=oldPath
+                    globals.tmpTBKpath=oldPath
                     print(e)
                 
                 confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
@@ -181,7 +200,15 @@ def load_data_fileV2():
                 template["credentials"]=encryptedCredStr
                 encryptedData=encrypt_data(template)
                 TBKPath=globals.tmpTBKpath
-                writeFile(encryptedData,TBKPath,"bin")
+                
+                writeStatus=writeFile(encryptedData,TBKPath,"bin")
+                if writeStatus=="invert":
+                    config["dataPath"]=oldPath
+                    globals.tmpTBKpath=oldPath
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                    console.print(f"[red] failed to change data file path")
+                
                 return globals.tempData
             elif choise.lower()=="n":
                 quit()
@@ -195,6 +222,7 @@ def load_data_fileV2():
 def reload_data_file():
     from Util.TerminalOps import prompt_options
     config=globals.tmpConfig
+    print("reloading data")
     if config.get("dataPath")!=None:
         path=config.get("dataPath")
         if path!=globals.tmpTBKpath:
@@ -254,11 +282,17 @@ def reload_data_file():
             
             if choise.lower()=="y":
                 #-----Initial Data file setup--------------------------------------------------------
-                config["dataPath"]=globals.tmpTBKpath
+                oldPath=config.get("dataPath")
+                config["dataPath"]=globals.tmpTBKpath  
                 try:
                     with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                         json.dump(config, f, indent=4)
                 except Exception as e:
+                    config["dataPath"]=oldPath
+                    globals.tmpTBKpath=oldPath
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                    print("new path inverted to",oldPath)
                     print(e)
                 confirmationEmail=Prompt.ask(f"[yello bold ] \t Insert Confirmation email ")
                 masterPWD=Prompt.ask(f"Insert Master Password")
@@ -287,11 +321,20 @@ def reload_data_file():
                 encryptedCredStr=base64.b64encode(encryptedCred).decode('utf-8')
                 template["credentials"]=encryptedCredStr
                 encryptedData=encrypt_data(template)
-                writeFile(encryptedData,path,"bin")
+                writeStatus=writeFile(encryptedData,path,"bin")
+                print("writeStatus",writeStatus)
+                if writeStatus=="invert":
+                    config["dataPath"]=oldPath
+                    globals.tmpTBKpath=oldPath
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
+                        json.dump(config, f, indent=4)
+                    console.print(f"[red] failed to change data file path")
+                    
                 return "done"
             elif choise.lower()=="n":
                 return "done"
 
+        
         # other code should just use global data to minimize repetetive decryption and loading
 
 def save_data_file(input,mode="add cred"): # DONE
@@ -366,7 +409,7 @@ def set_data_file(): # DONE
     pathType=path_type_identifier(path)
     TBKPath=evaluate_path(path,pathType)
     globals.tmpTBKpath=TBKPath
-    globals.tmpConfig["dataPath"]=TBKPath 
+    # globals.tmpConfig["dataPath"]=TBKPath 
     if path.lower()=="x" or path.lower()=="exit":
         return "done"
 
@@ -392,7 +435,8 @@ def readFile(path, fileType="json"):
     else:
         print("file type unspecified")
 
-def writeFile(data,path, fileType="json"):
+def writeFile(data,path, fileType="json", invert=True):
+    print("caller----->",inspect.stack()[1].function)
     if fileType=="json":
         try:
             with open(path, 'w') as f:
@@ -413,7 +457,10 @@ def writeFile(data,path, fileType="json"):
                 f.write(data)
             return "done"
         except Exception as e:
+            print("binary writing failed attemting invert return")
             print(f"Warning: error writing bin.{e}")
+            if invert:
+                return "invert"
     else:
         print("file type unspecified")
 
