@@ -66,7 +66,10 @@ def display_collections(data,title="DATA",mode="search",arg=False):
                 if pwd.get("current"):
                     activePassword=pwd.get("password")
             if len(data)==1:
-                pyperclip.copy(activePassword)
+                try:
+                    pyperclip.copy(activePassword)
+                except Exception as e:
+                    console.print("clipboard not available, Please copy password manually")
             keywords="/".join(data[i].get("keywords"))
             if len(keywords)>=17:  
                 keywords=keywords[:20-3]+"..."
@@ -111,7 +114,10 @@ def display_collections(data,title="DATA",mode="search",arg=False):
             if pwd.get("current"):
                 activePassword=pwd.get("password")
         console.print(f"\t[bold blue]Password ", activePassword)
-        pyperclip.copy(activePassword)
+        try:
+            pyperclip.copy(activePassword)
+        except Exception as e:
+            console.print("clipboard not available, Please copy password manually")
         if arg:
             quit()
         options=[
