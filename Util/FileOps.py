@@ -18,6 +18,7 @@ def load_data_fileV2():
     if globals.tempData=="": # if empty actually decrypt and load
         config=globals.tmpConfig
         if config.get("dataPath")!=None:
+            currentPlatform=get_os_type()
             path=config.get("dataPath")
             if os.path.exists(path):
                 try:
@@ -87,10 +88,9 @@ def load_data_fileV2():
                 
                 if choise.lower()=="y":
                     #-----Initial Data file setup--------------------------------------------------------
-                    filepath="./TBKfiles/config.json"
                     config["dataPath"]=globals.tmpTBKpath
                     try:
-                        with open(filepath, 'w') as f: # use write file fn
+                        with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                             json.dump(config, f, indent=4)
                     except Exception as e:
                         print(e)
@@ -142,10 +142,9 @@ def load_data_fileV2():
                 ]
             choise=prompt_options(options,"CREATE NEW FILE","simple")
             if choise.lower()=="y":
-                filepath="./TBKfiles/config.json"
                 config["dataPath"]=globals.tmpTBKpath
                 try:
-                    with open(filepath, 'w') as f: # use write file fn
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                         json.dump(config, f, indent=4)
                 except Exception as e:
                     print(e)
@@ -200,10 +199,8 @@ def reload_data_file():
             path=globals.tmpTBKpath
         if os.path.exists(path):
             try:
-                filepath="./TBKfiles/config.json"
-                config["dataPath"]=globals.tmpTBKpath
                 try:
-                    with open(filepath, 'w') as f: # use write file fn
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                         json.dump(config, f, indent=4)
                 except Exception as e:
                     print(e)
@@ -255,11 +252,9 @@ def reload_data_file():
             
             if choise.lower()=="y":
                 #-----Initial Data file setup--------------------------------------------------------
-                
-                filepath="./TBKfiles/config.json"
                 config["dataPath"]=globals.tmpTBKpath
                 try:
-                    with open(filepath, 'w') as f: # use write file fn
+                    with open(globals.tmpConfigPath, 'w') as f: # use write file fn
                         json.dump(config, f, indent=4)
                 except Exception as e:
                     print(e)
@@ -331,26 +326,35 @@ def save_data_file(input,mode="add cred"): # DONE
     return "done"
     
 def load_config(): # DONE
-    filepath="./TBKfiles/config.json"
+    currentPlatform=get_os_type()
+    if currentPlatform=="Windows":
+        app_name = "TBK"
+        config_file = "config.json"
+        appdata = os.getenv("APPDATA")
+        # appdataPath=os.path.join(appdata, app_name)
+        globals.tmpConfigPath=os.path.join(appdata, app_name, config_file)
+    else:
+        globals.tmpConfigPath="./TBKfiles/config.json"
     TBKfilesPath="./TBKfiles/"
     if not os.path.exists(TBKfilesPath):
-    # Create the directory if it doesn't exist
         os.makedirs(os.path.dirname(TBKfilesPath), exist_ok=True)
-    if os.path.exists(filepath):
+    if os.path.exists(globals.tmpConfigPath):
         try:
-            with open(filepath, 'r') as f:
+            with open(globals.tmpConfigPath, 'r') as f:
                 data = json.load(f)
             globals.tmpConfig=data
             return data
         except json.JSONDecodeError:
-            print(f"Warning: File '{filepath}' is not valid JSON. Creating a new file with default data.")
-            with open(filepath, 'w') as f:
+            print(f"Warning: File '{globals.tmpConfigPath}' is not valid JSON. Creating a new file with default data.")
+            with open(globals.tmpConfigPath, 'w') as f:
                 json.dump({}, f, indent=4)
             globals.tmpConfig={}
             return {}
     else:
-        print(f"File '{filepath}' not found. Creating it with default data.")
-        with open(filepath, 'w') as f:
+        print(f"File '{globals.tmpConfigPath}' not found. Creating it with default data.")
+        if not os.path.exists(globals.tmpConfigPath):
+            os.makedirs(os.path.dirname(globals.tmpConfigPath), exist_ok=True)
+        with open(globals.tmpConfigPath, 'w') as f:
             json.dump({}, f, indent=4)
         globals.tmpConfig={}
         return {}

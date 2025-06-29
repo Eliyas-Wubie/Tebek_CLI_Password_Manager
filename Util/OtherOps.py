@@ -61,7 +61,6 @@ def get_os_type():
     return os_name
 
 def email_confirmation(confirmation_code, dataEmail):
-    print("sending confirmation email")
     resendKey=Prompt.ask(f"Please insert Resend api key to use confirmation")
     resend.api_key = resendKey
 

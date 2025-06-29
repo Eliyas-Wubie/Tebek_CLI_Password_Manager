@@ -1,5 +1,6 @@
 from Util import globals
 import re
+import pyperclip
 
 from rich.prompt import Prompt
 from datetime import datetime, timedelta
@@ -26,6 +27,9 @@ def add_cred(arg=None): #DONE
             if password.lower()=="exit" or password.lower()=="x":
                 return "done"
         elif PasswordOption.lower()=="exit" or PasswordOption.lower()=="x":
+            return "done"
+        else:
+            console.print(f"[bold red] Invalid option")
             return "done"
         # generate and display password
         # display domain, username, password
@@ -72,7 +76,7 @@ def add_cred(arg=None): #DONE
             "A":"Accept"
         },
         {
-            "R":"change Domain and email"
+            "R":"Re-do"
         }
     ]
     choise=prompt_options(options,"CONFIRMATION","simple")
@@ -150,11 +154,22 @@ def search_cred(arg=None, typ=None): # DONE
 
 def find_cred(arg): #DONE
     from Util.TerminalOps import display_collections
+    if arg[0].isdigit() or re.search(f"CR-.*",f"{arg[0].upper()}"):
+        if arg[0].isdigit():
+            number=int(arg[0])
+            if number < 0 or number > 9999:
+                console.print(f"[bold red]Number must be between 0 and 9999.")
+            formatted_number = f"{number:04d}"
+            ID=f"CR-{formatted_number}"
+        else:
+            ID=arg[0].upper()
+    else:
+        console.print(f"[bold red] Format is not ID")
     data=globals.tempData
     creds=data.get("credentials")
     result=""
     for cred in creds:
-        if cred.get("id")==arg[0]:
+        if cred.get("id")==ID:
             result=cred
             break
     if result=="":
@@ -188,7 +203,7 @@ def update_cred(data=None,arg=None): # DONE
         keywords=keywords.replace(" ","")
         keywordsList=keywords.split(",")
     
-    # generate and display password
+        # generate and display password
         if createNewPassword.lower()=="g":
             password=generate_new_password()
         elif createNewPassword.lower()=="k":
@@ -220,7 +235,7 @@ def update_cred(data=None,arg=None): # DONE
                 "A":"Accept"
             },
             {
-                "C":"change Domain and email"
+                "R":"Re-Do"
             },
             {
                 "x":"discard and exit"
@@ -255,7 +270,7 @@ def update_cred(data=None,arg=None): # DONE
             save_data_file(send,"update cred")
             console.print(f"[bold purple] Credential Updated !", justify="center")
             return data
-        elif choise.lower()=="c": # recursive call
+        elif choise.lower()=="r": # recursive call
             update_cred(data)
         elif choise=="x" or choise=="X": # exit
             return "done"

@@ -2,11 +2,13 @@
 ################# NEW------------------------------------
 import argparse
 import sys
+import os
 
 from Util.TerminalOps import display_intro,prompt_options
 from Util.CredentialOps import search_cred,add_cred,show_notif, find_cred,update_cred,view_password_history
 from Util.FileOps import load_config,set_data_file,checkFile,load_data_fileV2
 from Util.ConfigrationOps import configurations
+from Util.OtherOps import get_os_type
 
 
 AP=argparse.ArgumentParser(description="single letter argument")
@@ -25,7 +27,16 @@ args=AP.parse_args()
 if len(sys.argv) == 1:
     display_intro()
     while True:
-        isConfigAvailable=checkFile("./TBKfiles/config.json")
+        currentPlatform=get_os_type()
+        if currentPlatform=="Windows":
+            app_name = "TBK"
+            config_file = "config.json"
+            appdata = os.getenv("APPDATA")
+            appdataPath=os.path.join(appdata, app_name)
+            configpath=os.path.join(appdata, app_name, config_file)
+        else:
+            configpath="./TBKfiles/config.json"
+        isConfigAvailable=checkFile(configpath)
         if isConfigAvailable:
             config=load_config()
             dataPath=config.get("dataPath")
@@ -76,7 +87,7 @@ if len(sys.argv) == 1:
                 if not isDataFileAvailable:
                     quit()
         else:
-            print("there is no config file")
+            print("Config file not found")
             load_config()
 else:
     isConfigAvailable=checkFile("./TBKfiles/config.json")
@@ -119,5 +130,5 @@ else:
             if not isDataFileAvailable:
                 quit()
     else:
-        print("there is no config file")
+        print("Config file not found")
         load_config()

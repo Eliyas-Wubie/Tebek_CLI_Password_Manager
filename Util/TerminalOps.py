@@ -1,3 +1,5 @@
+import pyperclip
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
@@ -57,15 +59,17 @@ def prompt_options(options,title="OPTIONS",mode="main",more=""): # DONE
 def display_collections(data,title="DATA",mode="search",arg=False):
     console.rule(title)
     if mode=="search":
-
         console.print(f"{"<SN>":<{4}}\t {"< ID >":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Password>":<{10}}")
         for i in range(len(data)):
             activePassword="No Active Password"
             for pwd in data[i].get("passwords"):
                 if pwd.get("current"):
                     activePassword=pwd.get("password")
+            if len(data)==1:
+                pyperclip.copy(activePassword)
             keywords="/".join(data[i].get("keywords"))
-            keywords=keywords[:20-3]+"..."
+            if len(keywords)>=17:  
+                keywords=keywords[:20-3]+"..."
             sn="<"+str(i)+">"
             console.print(f"{sn:<{4}}\t {data[i].get("id"):<{4}} \t {keywords:<{20}} \t {data[i].get("username"):<{25}} \t {activePassword:<{10}}")
         resultCount=len(data)
@@ -81,7 +85,6 @@ def display_collections(data,title="DATA",mode="search",arg=False):
             if -1<int(choise)<len(data):
                 resp=display_collections(data[int(choise)],"SINGLE","search_single")
                 if resp=="deleted":
-                    print("showing after deleting")
                     del data[int(choise)]
                     display_collections(data,title,mode)
                 else:
@@ -108,17 +111,19 @@ def display_collections(data,title="DATA",mode="search",arg=False):
             if pwd.get("current"):
                 activePassword=pwd.get("password")
         console.print(f"\t[bold blue]Password ", activePassword)
+        pyperclip.copy(activePassword)
         if arg:
             quit()
         options=[
             {"U":"Update"},
-            {"V":"View Previous Passowrds"},
+            {"VH":"View Previous Passowrds"},
             {"D":"Delete Credential"}
         ]
         choise=prompt_options(options,"OPTIONS","simple")
         choise=choise.upper()
         actionMap={
             "U":update_cred,
+            "VH":view_password_history,
             "V":view_password_history,
             "D":del_cred
         }
@@ -139,7 +144,7 @@ def display_collections(data,title="DATA",mode="search",arg=False):
             return "done"
         return "done"
     if mode=="notif":
-        console.print(f"{"<SN>":<{4}}{"< ID >":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
+        console.print(f"{"<SN>":<{4}}\t {"< ID >":<{4}} \t {"< KEYWORDS >":<{20}} \t {"<USERNAME>":<{25}} \t {"<Expire Date>":<{10}}")
         for i in range(len(data)):
             activePassword="No Active Password"
             for pwd in data[i].get("cred").get("passwords"):

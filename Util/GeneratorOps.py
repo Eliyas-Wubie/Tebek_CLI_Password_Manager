@@ -15,7 +15,6 @@ def generate_credential_id(): #DONE
 
     # Get the last number for today; if not found, start from 0
     last_number = last_ids.get(today, -1)
-    print("last number is", last_number)
     # Generate a new ID
     new_id, new_last_number = generate_id(last_number)
 
@@ -61,6 +60,5 @@ def generate_new_password(length=17,mode="restricted"): #DONE
         console.print(f"[bold red]the length of password generated is not",length,"password: ", password)
 
 def generate_code(length=8):
-    print("generating code")
     characters = string.ascii_letters + string.digits  # a-zA-Z0-9
     return ''.join(random.choices(characters, k=length))
