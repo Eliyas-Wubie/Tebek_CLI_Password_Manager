@@ -422,6 +422,7 @@ def checkFile(path):
 
 def path_type_identifier(path):
     osType=get_os_type()
+    print("TEST - os type",osType)
     if osType=="Windows":
         if not "\\" in path:
             pathType="unspecified"
@@ -429,6 +430,7 @@ def path_type_identifier(path):
             pathType="absolut"
         elif path[0].lower()==".":
             pathType="relative"
+        print("TEST - Windows type path type",pathType)
         return pathType
     if osType=="Linux":
         if not "\\" in path:
@@ -437,6 +439,7 @@ def path_type_identifier(path):
             pathType="absolut"
         elif path[0].lower()==".":
             pathType="relative"
+        print("TEST - linux type path type",pathType)
         return pathType
 
 
