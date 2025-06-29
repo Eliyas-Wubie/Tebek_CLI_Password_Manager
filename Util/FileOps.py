@@ -434,7 +434,7 @@ def path_type_identifier(path):
         print("TEST - Windows type path type",pathType)
         return pathType
     if osType=="Linux":
-        if not "\\" in path:
+        if not "/" in path:
             pathType="unspecified"
         elif path[0].lower()=="/" or path[0].lower()=="\\":
             pathType="absolut"
