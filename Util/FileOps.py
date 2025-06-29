@@ -423,19 +423,22 @@ def checkFile(path):
 def path_type_identifier(path):
     osType=get_os_type()
     if osType=="Windows":
-        pass
+        if not "\\" in path:
+            pathType="unspecified"
+        elif path[0].lower()=="c":
+            pathType="absolut"
+        elif path[0].lower()==".":
+            pathType="relative"
+        return pathType
     if osType=="Linux":
-        pass
+        if not "\\" in path:
+            pathType="unspecified"
+        elif path[0].lower()=="/" or path[0].lower()=="\\":
+            pathType="absolut"
+        elif path[0].lower()==".":
+            pathType="relative"
+        return pathType
 
-    if not "\\" in path:
-        pathType="unspecified"
-    elif path[0].lower()=="c":
-        pathType="absolut"
-    elif path[0].lower()=="/":
-        pathType="absolut" 
-    elif path[0].lower()==".":
-        pathType="relative"
-    return pathType
 
 def evaluate_path(path,pathType):
     if pathType=="unspecified":
