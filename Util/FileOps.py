@@ -19,6 +19,7 @@ def load_data_fileV2():
         config=globals.tmpConfig
         if config.get("dataPath")!=None:
             path=config.get("dataPath")
+            print("TEST- data path",path)
             if os.path.exists(path):
                 try:
                     #-----Getting encrypted data and doing decryption lv1-----------------------------------
@@ -129,6 +130,7 @@ def load_data_fileV2():
                 elif choise.lower()=="n":
                     return "done"
         else:
+            print("TEST- data path",config.get("dataPath"))
             #--- Handling Edge case, where the configuration with data path exists but the file dose not
             console.print(f"The File dose not Exist, Would you like to start from an empty file?")
             options=[
